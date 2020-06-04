@@ -39,8 +39,8 @@ TreeView {
                                  Material.color(Material.Grey, Material.Shade800);
 
     property color evenColor: (Material.theme == Material.Light) ?
-                                 Material.color(Material.Grey, Material.Shade200):
-                                 Material.color(Material.Grey, Material.Shade900);
+                                  Material.color(Material.Grey, Material.Shade200):
+                                  Material.color(Material.Grey, Material.Shade900);
 
     property color highlightColor: Material.accentColor;
 
@@ -49,7 +49,7 @@ TreeView {
     horizontalScrollBarPolicy: Qt.ScrollBarAlwaysOff
     headerVisible: false
     headerDelegate: Rectangle {
-      visible: false
+        visible: false
     }
     backgroundVisible: false;
 
@@ -60,14 +60,6 @@ TreeView {
     }
 
     // =========== Delegates ============
-    contentFooter : Component{
-        Rectangle {
-            color: Material.color(Material.LightBlue, Material.Shade700);
-            width: parent.width
-            height: parent.height * 0.2
-        }
-    }
-
     rowDelegate: Rectangle {
         color: (styleData.selected)? highlightColor : (styleData.row % 2 == 0) ? evenColor : oddColor
         height: itemHeight;
@@ -79,26 +71,40 @@ TreeView {
         Image {
             id: icon
             source: "plottable_icon.svg"
-            height: itemHeight * 0.5
-            width: itemHeight * 0.5
+            height: itemHeight * 0.6
+            width: itemHeight * 0.6
+            y : itemHeight * 0.2
             visible: model.plottable
         }
 
         Text {
-            text: (model === null) ? "" : (model.plottable) ? "  " + model.name : model.name
+            id : field
+            text: (model === null) ? "" : model.name
             color: (Material.theme == Material.Light) ? Material.color(Material.Grey, Material.Shade800):
-                   (styleData.selected) ? Material.color(Material.Grey, Material.Shade800):
-                                          Material.color(Material.Grey, Material.Shade400);
+                                                        (styleData.selected) ? Material.color(Material.Grey, Material.Shade800):
+                                                                               Material.color(Material.Grey, Material.Shade400);
             font.pointSize: 12
+            anchors.leftMargin: 5
             anchors.left: icon.right
+            y: icon.y
+
+            /*
+            MouseArea {
+                id : textArea
+                anchors.fill: parent
+                hoverEnabled: true
+                propagateComposedEvents: true
+
+                onClicked: mouse.accepted = false
+            }
+            */
         }
 
         ToolTip {
             id: tool_tip
             delay: 1000
             text: (model === null) ? "Type ?" : "Type: " + model.type;
-            visible: false
-
+            // visible: textArea.containsMouse
         }
     }
 

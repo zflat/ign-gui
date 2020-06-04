@@ -35,7 +35,7 @@
 #include <ignition/common.hh>
 
 #define NAME_KEY "name"
-#define TYPE_KEY "key"
+#define TYPE_KEY "type"
 #define TOPIC_KEY "topic"
 #define PATH_KEY "path"
 #define PLOT_KEY "plottable"

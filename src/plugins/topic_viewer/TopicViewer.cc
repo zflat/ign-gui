@@ -72,16 +72,19 @@ TopicViewer::TopicViewer() :Plugin(), dataPtr(new TopicViewerPrivate)
                 "TopicsModel", this->dataPtr->model);
 }
 
+//////////////////////////////////////////////////
 TopicViewer::~TopicViewer()
 {
 }
 
+//////////////////////////////////////////////////
 void TopicViewer::LoadConfig(const tinyxml2::XMLElement *)
 {
   if (this->title.empty())
     this->title = "Topic Viewer";
 }
 
+//////////////////////////////////////////////////
 void TopicViewer::CreateModel()
 {
   this->dataPtr->model = new TopicsModel();
@@ -117,10 +120,14 @@ void TopicViewer::AddTopic(std::string _topic, std::string _msg)
   parent->appendRow(topicItem);
 
   // remove 'ignition.msgs.' from msg name
-  try {
+  try
+  {
     if (_msg.substr(0, 14) == "ignition.msgs.")
       _msg.erase(0, 14);
-  } catch (...) {    }
+  }
+  catch (...)
+  {
+  }
 
   if (_msg == "Scene")
     return;
@@ -133,10 +140,6 @@ void TopicViewer::AddField(QStandardItem* _parentItem,
                              std::string _msgName,
                              std::string _msgType)
 {
-    QStandardItem *msgItem = this->FactoryItem(_msgName, _msgType);
-    _parentItem->appendRow(msgItem);
-    this->SetItemTopic(msgItem);
-
   auto msg = ignition::msgs::Factory::New(_msgType);
   if (!msg)
     return;
@@ -145,6 +148,9 @@ void TopicViewer::AddField(QStandardItem* _parentItem,
   if (!msgDescriptor)
     return;
 
+  QStandardItem *msgItem = this->FactoryItem(_msgName, _msgType);
+  _parentItem->appendRow(msgItem);
+  this->SetItemTopic(msgItem);
 
   for (int i =0 ; i < msgDescriptor->field_count(); i++ )
   {
@@ -195,6 +201,7 @@ QStandardItem* TopicViewer::FactoryItem(std::string _name,
   return item;
 }
 
+//////////////////////////////////////////////////
 void TopicViewer::SetItemTopic(QStandardItem *_item)
 {
   std::string topic = this->GetTopicName(_item);
@@ -202,6 +209,7 @@ void TopicViewer::SetItemTopic(QStandardItem *_item)
   _item->setData(Topic, TOPIC_ROLE);
 }
 
+//////////////////////////////////////////////////
 void TopicViewer::SetItemPath(QStandardItem *_item)
 {
   std::string path = this->GetFullPathItemName(_item);
@@ -224,6 +232,7 @@ std::string TopicViewer::GetTopicName(QStandardItem *_item)
   return _item->data(NAME_ROLE).toString().toStdString();
 }
 
+//////////////////////////////////////////////////
 std::string TopicViewer::GetFullPathItemName(
         QStandardItem *_item)
 {
@@ -261,13 +270,12 @@ bool TopicViewer::IsPlotable(
   for (unsigned int j =0 ; j < this->plotableTypes.size() ; j++)
   {
     if (_type == this->plotableTypes[j])
-    {
       return true;
-    }
   }
   return false;
 }
 
+//////////////////////////////////////////////////
 bool TopicViewer::IsPlotable(QModelIndex _index)
 {
   QStandardItem *item = this->dataPtr->model->itemFromIndex(_index);
