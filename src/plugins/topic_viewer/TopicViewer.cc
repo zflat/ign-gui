@@ -17,6 +17,18 @@
 #include "TopicViewer.hh"
 #include <ignition/plugin/Register.hh>
 
+#define NAME_KEY "name"
+#define TYPE_KEY "type"
+#define TOPIC_KEY "topic"
+#define PATH_KEY "path"
+#define PLOT_KEY "plottable"
+
+#define NAME_ROLE 51
+#define TYPE_ROLE 52
+#define TOPIC_ROLE 53
+#define PATH_ROLE 54
+#define PLOT_ROLE 55
+
 namespace ignition
 {
 namespace gui
@@ -92,7 +104,7 @@ void TopicViewer::CreateModel()
   std::vector<std::string> topics;
   this->dataPtr->node.TopicList(topics);
 
-  for (unsigned int i = 0; i < topics.size(); i++)
+  for (unsigned int i = 0; i < topics.size(); ++i)
   {
     std::vector<ignition::transport::MessagePublisher> infoMsgs;
     this->dataPtr->node.TopicInfo(topics[i], infoMsgs);
@@ -107,38 +119,41 @@ void TopicViewer::SetPlottingMode(bool _mode)
   this->plottingMode = _mode;
 }
 
-bool TopicViewer :: GetPlottingMode()
+//////////////////////////////////////////////////
+bool TopicViewer::PlottingMode()
 {
   return this->plottingMode;
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::AddTopic(std::string _topic, std::string _msg)
+void TopicViewer::AddTopic(const std::string &_topic,
+                           const std::string &_msg)
 {
   QStandardItem *topicItem = this->FactoryItem(_topic, "Topic");
   QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
   parent->appendRow(topicItem);
 
   // remove 'ignition.msgs.' from msg name
+  std::string msg = _msg;
   try
   {
-    if (_msg.substr(0, 14) == "ignition.msgs.")
-      _msg.erase(0, 14);
+    if (msg.substr(0, 14) == "ignition.msgs.")
+      msg.erase(0, 14);
   }
-  catch (...)
+  catch (std::out_of_range &exception)
   {
   }
 
-  if (_msg == "Scene")
+  if (msg == "Scene")
     return;
 
-  this->AddField(topicItem , _msg, _msg);
+  this->AddField(topicItem , msg, msg);
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::AddField(QStandardItem* _parentItem,
-                             std::string _msgName,
-                             std::string _msgType)
+void TopicViewer::AddField(QStandardItem *_parentItem,
+                           const std::string &_msgName,
+                           const std::string &_msgType)
 {
   auto msg = ignition::msgs::Factory::New(_msgType);
   if (!msg)
@@ -152,7 +167,7 @@ void TopicViewer::AddField(QStandardItem* _parentItem,
   _parentItem->appendRow(msgItem);
   this->SetItemTopic(msgItem);
 
-  for (int i =0 ; i < msgDescriptor->field_count(); i++ )
+  for (int i =0 ; i < msgDescriptor->field_count(); ++i)
   {
     auto msgField = msgDescriptor->field(i);
 
@@ -160,10 +175,12 @@ void TopicViewer::AddField(QStandardItem* _parentItem,
     if (messageType)
     {
       AddField(msgItem, msgField->name(), messageType->name());
+      igndbg << "name: " << msgField->name() <<
+                ", type: " << messageType->name() << std::endl;
     }
     else
     {
-      // skip if it is not pltable type and plottingMode
+      // skip if it is not plottable type and plottingMode
       if (this->plottingMode && !this->IsPlotable(msgField->type()))
         continue;
 
@@ -180,10 +197,10 @@ void TopicViewer::AddField(QStandardItem* _parentItem,
 }
 
 //////////////////////////////////////////////////
-QStandardItem* TopicViewer::FactoryItem(std::string _name,
-                                          std::string _type,
-                                          std::string _path,
-                                          std::string _topic)
+QStandardItem *TopicViewer::FactoryItem(const std::string &_name,
+                                        const std::string &_type,
+                                        const std::string &_path,
+                                        const std::string &_topic)
 {
   QString name = QString::fromStdString(_name);
   QString type = QString::fromStdString(_type);
@@ -204,7 +221,7 @@ QStandardItem* TopicViewer::FactoryItem(std::string _name,
 //////////////////////////////////////////////////
 void TopicViewer::SetItemTopic(QStandardItem *_item)
 {
-  std::string topic = this->GetTopicName(_item);
+  std::string topic = this->TopicName(_item);
   QVariant Topic(QString::fromStdString(topic));
   _item->setData(Topic, TOPIC_ROLE);
 }
@@ -212,13 +229,13 @@ void TopicViewer::SetItemTopic(QStandardItem *_item)
 //////////////////////////////////////////////////
 void TopicViewer::SetItemPath(QStandardItem *_item)
 {
-  std::string path = this->GetFullPathItemName(_item);
+  std::string path = this->ItemPath(_item);
   QVariant Path(QString::fromStdString(path));
   _item->setData(Path, PATH_ROLE);
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::GetTopicName(QStandardItem *_item)
+std::string TopicViewer::TopicName(QStandardItem *_item)
 {
   QStandardItem *parent = _item->parent();
 
@@ -233,8 +250,7 @@ std::string TopicViewer::GetTopicName(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::GetFullPathItemName(
-        QStandardItem *_item)
+std::string TopicViewer::ItemPath(QStandardItem *_item)
 {
   std::vector<std::string> Path;
 
@@ -254,7 +270,7 @@ std::string TopicViewer::GetFullPathItemName(
   // convert to string
   std::string path;
 
-  for (unsigned int i = 0; i < Path.size()-1; i++)
+  for (unsigned int i = 0; i < Path.size()-1; ++i)
     path += Path[i] + "-";
 
   if (n > 0)
@@ -267,7 +283,7 @@ std::string TopicViewer::GetFullPathItemName(
 bool TopicViewer::IsPlotable(
         const google::protobuf::FieldDescriptor::Type &_type)
 {
-  for (unsigned int j =0 ; j < this->plotableTypes.size() ; j++)
+  for (unsigned int j =0 ; j < this->plotableTypes.size() ; ++j)
   {
     if (_type == this->plotableTypes[j])
       return true;
@@ -302,7 +318,6 @@ void TopicViewer::print(QModelIndex _index)
   igndbg << "name: " << name << ", type: " << type <<
                ", path: " << path << ", topic: " << topic << std::endl;
 }
-
 
 // Register this plugin
 IGNITION_ADD_PLUGIN(ignition::gui::plugins::TopicViewer,
