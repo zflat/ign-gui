@@ -104,7 +104,8 @@ TreeView {
             anchors.fill: parent
 
             // only plottable items are dragable
-            drag.target: (model.plottable) ? parent : null
+            drag.target: (model === null) ? null :
+                         (model.plottable) ? parent : null
 
             // get a copy image of the dragged item
             onPressed: parent.grabToImage(function(result) {

@@ -129,10 +129,6 @@ bool TopicViewer::PlottingMode()
 void TopicViewer::AddTopic(const std::string &_topic,
                            const std::string &_msg)
 {
-  QStandardItem *topicItem = this->FactoryItem(_topic, "Topic");
-  QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
-  parent->appendRow(topicItem);
-
   // remove 'ignition.msgs.' from msg name
   std::string msg = _msg;
   try
@@ -142,7 +138,13 @@ void TopicViewer::AddTopic(const std::string &_topic,
   }
   catch (std::out_of_range &exception)
   {
+    igndbg << "faild to parse msg: " << _msg << std::endl;
   }
+
+  QStandardItem *topicItem = this->FactoryItem(_topic, msg);
+  topicItem->setWhatsThis("Topic");
+  QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
+  parent->appendRow(topicItem);
 
   if (msg == "Scene")
     return;
@@ -157,15 +159,26 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
 {
   auto msg = ignition::msgs::Factory::New(_msgType);
   if (!msg)
-    return;
+      return;
 
-  const google::protobuf::Descriptor *msgDescriptor = msg->GetDescriptor();
+  auto msgDescriptor = msg->GetDescriptor();
   if (!msgDescriptor)
     return;
 
-  QStandardItem *msgItem = this->FactoryItem(_msgName, _msgType);
-  _parentItem->appendRow(msgItem);
-  this->SetItemTopic(msgItem);
+  QStandardItem *msgItem;
+
+  // check if it is a topic, to skip the extra level of the topic Msg
+  if (_parentItem->whatsThis() == "Topic")
+  {
+    msgItem = _parentItem;
+    // make it different, so next iteration will make a new msg item
+    msgItem->setWhatsThis("Msg");
+  }
+  else
+  {
+    msgItem = this->FactoryItem(_msgName, _msgType);
+    _parentItem->appendRow(msgItem);
+  }
 
   for (int i =0 ; i < msgDescriptor->field_count(); ++i)
   {
@@ -184,9 +197,8 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
       if (this->plottingMode && !this->IsPlotable(msgField->type()))
         continue;
 
-      QStandardItem *msgFieldItem = this->FactoryItem
-      (msgField->name(), msgField->type_name());
-
+      auto msgFieldItem = this->FactoryItem(msgField->name(),
+                                            msgField->type_name());
       msgItem->appendRow(msgFieldItem);
 
       this->SetItemPath(msgFieldItem);
@@ -252,20 +264,15 @@ std::string TopicViewer::TopicName(QStandardItem *_item)
 //////////////////////////////////////////////////
 std::string TopicViewer::ItemPath(QStandardItem *_item)
 {
-  std::vector<std::string> Path;
-
-  while (_item->parent())
+  std::deque<std::string> Path;
+  while (_item)
   {
-    Path.push_back(_item->data(NAME_ROLE).toString().toStdString());
+    Path.push_front(_item->data(NAME_ROLE).toString().toStdString());
     _item = _item->parent();
   }
 
-  std::reverse(Path.begin(), Path.end());
-
-  int n = Path.size();
-  if (n > 0)
+  if (Path.size())
     Path.erase(Path.begin());
-
 
   // convert to string
   std::string path;
@@ -273,7 +280,7 @@ std::string TopicViewer::ItemPath(QStandardItem *_item)
   for (unsigned int i = 0; i < Path.size()-1; ++i)
     path += Path[i] + "-";
 
-  if (n > 0)
+  if (Path.size())
     path += Path[Path.size()-1];
 
   return path;

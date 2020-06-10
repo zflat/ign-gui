@@ -22,6 +22,7 @@
 #include <QModelIndex>
 #include <string>
 #include <vector>
+#include <deque>
 #include <memory>
 
 #include <ignition/gui/Application.hh>
@@ -33,6 +34,7 @@
 #include <ignition/transport/MessageInfo.hh>
 #include <ignition/transport/Publisher.hh>
 #include <ignition/common.hh>
+#include <ignition/gui.hh>
 
 namespace ignition
 {
