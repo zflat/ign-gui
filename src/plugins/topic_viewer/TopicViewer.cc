@@ -157,14 +157,6 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
                            const std::string &_msgName,
                            const std::string &_msgType)
 {
-  auto msg = ignition::msgs::Factory::New(_msgType);
-  if (!msg)
-      return;
-
-  auto msgDescriptor = msg->GetDescriptor();
-  if (!msgDescriptor)
-    return;
-
   QStandardItem *msgItem;
 
   // check if it is a topic, to skip the extra level of the topic Msg
@@ -179,6 +171,14 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
     msgItem = this->FactoryItem(_msgName, _msgType);
     _parentItem->appendRow(msgItem);
   }
+
+  auto msg = ignition::msgs::Factory::New(_msgType);
+  if (!msg)
+      return;
+
+  auto msgDescriptor = msg->GetDescriptor();
+  if (!msgDescriptor)
+    return;
 
   for (int i =0 ; i < msgDescriptor->field_count(); ++i)
   {

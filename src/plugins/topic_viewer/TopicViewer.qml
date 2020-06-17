@@ -54,7 +54,7 @@ TreeView {
     TableViewColumn
     {
         role: "name";
-        width: parent.width;
+//        width: parent.width;
     }
 
     // =========== Selection ===========
@@ -80,9 +80,9 @@ TreeView {
         anchors.top: parent.top
         anchors.right: parent.right
 
+        Drag.mimeData: { "text/plain" :  model.topic + "," + model.path }
 
         Drag.dragType: Drag.Automatic
-        Drag.mimeData: { "text/plain" : "TopicViewer" }
         Drag.supportedActions : Qt.CopyAction
         Drag.active: dragMouse.drag.active
         // a point to drag from
@@ -90,7 +90,8 @@ TreeView {
         Drag.hotSpot.y: itemHeight
 
         // used by DropArea that accepts the dragged items
-        function itemData () {
+        function itemData ()
+        {
             return {
                 "name": model.name,
                 "type": model.type,
@@ -112,7 +113,8 @@ TreeView {
                 parent.Drag.imageSource = result.url
             })
 
-            onReleased: {
+            onReleased:
+            {
                 // emit drop event to notify the DropArea (must manually)
                 parent.Drag.drop();
             }
