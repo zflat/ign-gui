@@ -76,7 +76,7 @@ TopicViewer::TopicViewer() :Plugin(), dataPtr(new TopicViewerPrivate)
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT64);
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_BOOL);
 
-  this->plottingMode = true;
+  this->plottingMode = false;
 
   this->CreateModel();
 
@@ -146,9 +146,6 @@ void TopicViewer::AddTopic(const std::string &_topic,
   QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
   parent->appendRow(topicItem);
 
-  if (msg == "Scene")
-    return;
-
   this->AddField(topicItem , msg, msg);
 }
 
@@ -157,6 +154,9 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
                            const std::string &_msgName,
                            const std::string &_msgType)
 {
+  if (_msgName == "model")
+      return;
+
   QStandardItem *msgItem;
 
   // check if it is a topic, to skip the extra level of the topic Msg
@@ -193,17 +193,16 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
     }
     else
     {
-      // skip if it is not plottable type and plottingMode
-      if (this->plottingMode && !this->IsPlotable(msgField->type()))
-        continue;
-
       auto msgFieldItem = this->FactoryItem(msgField->name(),
                                             msgField->type_name());
       msgItem->appendRow(msgFieldItem);
 
       this->SetItemPath(msgFieldItem);
       this->SetItemTopic(msgFieldItem);
-      msgFieldItem->setData(QVariant(true), PLOT_ROLE);
+
+      // to make the plottable items draggable
+      if (this->IsPlotable(msgField->type()))
+          msgFieldItem->setData(QVariant(true), PLOT_ROLE);
     }
   }
 }
