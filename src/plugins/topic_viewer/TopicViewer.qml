@@ -54,7 +54,6 @@ TreeView {
     TableViewColumn
     {
         role: "name";
-//        width: parent.width;
     }
 
     // =========== Selection ===========
@@ -80,7 +79,7 @@ TreeView {
         anchors.top: parent.top
         anchors.right: parent.right
 
-        Drag.mimeData: { "text/plain" :  model.topic + "," + model.path }
+        Drag.mimeData: { "text/plain" : (model === null) ? "" : model.topic + "," + model.path }
 
         Drag.dragType: Drag.Automatic
         Drag.supportedActions : Qt.CopyAction

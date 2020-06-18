@@ -65,7 +65,7 @@ using namespace ignition;
 using namespace gui;
 using namespace plugins;
 
-TopicViewer::TopicViewer() :Plugin(), dataPtr(new TopicViewerPrivate)
+TopicViewer::TopicViewer() : Plugin(), dataPtr(new TopicViewerPrivate)
 {
   using namespace google::protobuf;
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_DOUBLE);
@@ -75,8 +75,6 @@ TopicViewer::TopicViewer() :Plugin(), dataPtr(new TopicViewerPrivate)
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT32);
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT64);
   this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_BOOL);
-
-  this->plottingMode = false;
 
   this->CreateModel();
 
@@ -114,39 +112,15 @@ void TopicViewer::CreateModel()
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::SetPlottingMode(bool _mode)
-{
-  this->plottingMode = _mode;
-}
-
-//////////////////////////////////////////////////
-bool TopicViewer::PlottingMode()
-{
-  return this->plottingMode;
-}
-
-//////////////////////////////////////////////////
 void TopicViewer::AddTopic(const std::string &_topic,
                            const std::string &_msg)
 {
-  // remove 'ignition.msgs.' from msg name
-  std::string msg = _msg;
-  try
-  {
-    if (msg.substr(0, 14) == "ignition.msgs.")
-      msg.erase(0, 14);
-  }
-  catch (std::out_of_range &exception)
-  {
-    igndbg << "faild to parse msg: " << _msg << std::endl;
-  }
-
-  QStandardItem *topicItem = this->FactoryItem(_topic, msg);
+  QStandardItem *topicItem = this->FactoryItem(_topic, _msg);
   topicItem->setWhatsThis("Topic");
   QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
   parent->appendRow(topicItem);
 
-  this->AddField(topicItem , msg, msg);
+  this->AddField(topicItem , _msg, _msg);
 }
 
 //////////////////////////////////////////////////
@@ -178,9 +152,12 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
 
   auto msgDescriptor = msg->GetDescriptor();
   if (!msgDescriptor)
-    return;
+  {
+      ignerr << "Null Descriptor of Msg: " << _msgType << std::endl;
+      return;
+  }
 
-  for (int i =0 ; i < msgDescriptor->field_count(); ++i)
+  for (int i = 0 ; i < msgDescriptor->field_count(); ++i)
   {
     auto msgField = msgDescriptor->field(i);
 
@@ -246,7 +223,7 @@ void TopicViewer::SetItemPath(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::TopicName(QStandardItem *_item)
+std::string TopicViewer::TopicName(const QStandardItem *_item)
 {
   QStandardItem *parent = _item->parent();
 
@@ -261,59 +238,40 @@ std::string TopicViewer::TopicName(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::ItemPath(QStandardItem *_item)
+std::string TopicViewer::ItemPath(const QStandardItem *_item)
 {
-  std::deque<std::string> Path;
+  std::deque<std::string> path;
   while (_item)
   {
-    Path.push_front(_item->data(NAME_ROLE).toString().toStdString());
+    path.push_front(_item->data(NAME_ROLE).toString().toStdString());
     _item = _item->parent();
   }
 
-  if (Path.size())
-    Path.erase(Path.begin());
+  if (path.size())
+    path.erase(path.begin());
 
   // convert to string
-  std::string path;
+  std::string pathString;
 
-  for (unsigned int i = 0; i < Path.size()-1; ++i)
-    path += Path[i] + "-";
+  for (unsigned int i = 0; i < path.size()-1; ++i)
+    pathString += path[i] + "-";
 
-  if (Path.size())
-    path += Path[Path.size()-1];
+  if (path.size())
+    pathString += path[path.size()-1];
 
-  return path;
+  return pathString;
 }
 
 /////////////////////////////////////////////////
 bool TopicViewer::IsPlotable(
         const google::protobuf::FieldDescriptor::Type &_type)
 {
-  for (unsigned int j =0 ; j < this->plotableTypes.size() ; ++j)
-  {
-    if (_type == this->plotableTypes[j])
-      return true;
-  }
-  return false;
-}
-
-//////////////////////////////////////////////////
-bool TopicViewer::IsPlotable(QModelIndex _index)
-{
-  QStandardItem *item = this->dataPtr->model->itemFromIndex(_index);
-  if (item->hasChildren())
-    return false;
-
-  std::string msgType = item->data(TYPE_ROLE).toString().toStdString();
-  auto msg = ignition::msgs::Factory::New(msgType);
-  if (msg)
-    return false;
-
-  return true;
+    return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
+                     _type) != this->plotableTypes.end();
 }
 
 ////////////////////////////////////////////
-void TopicViewer::print(QModelIndex _index)
+void TopicViewer::print(const QModelIndex _index)
 {
   auto item = this->dataPtr->model->itemFromIndex(_index);
   auto name = item->data(NAME_ROLE).toString().toStdString();
