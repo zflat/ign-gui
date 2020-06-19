@@ -99,12 +99,12 @@ namespace plugins
 
     /// \brief get the topic name of selected item
     /// \param[in] _item ref to the item to get its parent topic
-    private: std::string TopicName(const QStandardItem *_item);
+    private: std::string TopicName(const QStandardItem *_item) const;
 
     /// \brief full path starting from topic name till the msg name
     /// \param[in] _index index of the QStanadardItem
     /// \return string with all elements separated by '/'
-    private: std::string ItemPath(const QStandardItem *_item);
+    private: std::string ItemPath(const QStandardItem *_item) const;
 
     /// \brief check if the type is supported in the plotting types
     /// \param[in] _type the msg type to check if it is supported

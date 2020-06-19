@@ -139,6 +139,8 @@ TreeView {
                 // set the focus to the selected item to receive the keyboard events
                 // this is useful to enable navigating with keyboard from the right position
                 item.forceActiveFocus();
+
+                tree.expandCollapseMsg();
             }
         }
 
@@ -177,15 +179,38 @@ TreeView {
         }
     }
 
-    onDoubleClicked:  {
-        tree.expandCollapseMsg();
-        TopicViewer.print(index);
-    }
-
     function expandCollapseMsg(){
         if (tree.isExpanded(currentIndex))
             tree.collapse(currentIndex)
         else
             tree.expand(tree.currentIndex);
     }
+
+    Transition {
+        id: expandTransition
+        NumberAnimation {
+            property: "y";
+            from: tree.__listView.currentItem.y;
+            duration: 300;
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    Transition {
+        id: displacedTransition
+        NumberAnimation { property: "y"; duration: 300; easing.type: Easing.OutQuad; }
+    }
+
+    Transition {
+        id: removeTransition
+        NumberAnimation { property: "y"; duration: 300; easing.type: Easing.OutQuad; }
+    }
+
+
+    Component.onCompleted: {
+        tree.__listView.add = expandTransition;
+        tree.__listView.displaced = displacedTransition;
+        tree.__listView.removeDisplaced = removeTransition;
+    }
+
 }

@@ -128,9 +128,6 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
                            const std::string &_msgName,
                            const std::string &_msgType)
 {
-  if (_msgName == "model")
-      return;
-
   QStandardItem *msgItem;
 
   // check if it is a topic, to skip the extra level of the topic Msg
@@ -160,6 +157,9 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
   for (int i = 0 ; i < msgDescriptor->field_count(); ++i)
   {
     auto msgField = msgDescriptor->field(i);
+
+    if (msgField->is_repeated())
+        continue;
 
     auto messageType = msgField->message_type();
     if (messageType)
@@ -223,7 +223,7 @@ void TopicViewer::SetItemPath(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::TopicName(const QStandardItem *_item)
+std::string TopicViewer::TopicName(const QStandardItem *_item) const
 {
   QStandardItem *parent = _item->parent();
 
@@ -238,7 +238,7 @@ std::string TopicViewer::TopicName(const QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::ItemPath(const QStandardItem *_item)
+std::string TopicViewer::ItemPath(const QStandardItem *_item) const
 {
   std::deque<std::string> path;
   while (_item)
