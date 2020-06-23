@@ -23,6 +23,7 @@ import QtQuick.Controls.Material 2.1
 import QtQuick.Layouts 1.3
 
 TreeView {
+    objectName: "treeView"
     id:tree
     model: TopicsModel
 
@@ -132,7 +133,7 @@ TreeView {
                 tree.selection.setCurrentIndex(styleData.index,ItemSelectionModel.ClearAndSelect)
 
                 // the currentIndex of the tree.selection is not the same
-                // of the tree.currentIndex, so set the tree.currentIndex
+                // of the tree.currentIndex, so set the tree.currentIndex.
                 // this is the way to access it as it is read-only
                 tree.__currentRow = styleData.row
 
@@ -191,26 +192,21 @@ TreeView {
         NumberAnimation {
             property: "y";
             from: tree.__listView.currentItem.y;
-            duration: 300;
+            duration: 200;
             easing.type: Easing.OutQuad
         }
     }
 
     Transition {
         id: displacedTransition
-        NumberAnimation { property: "y"; duration: 300; easing.type: Easing.OutQuad; }
-    }
-
-    Transition {
-        id: removeTransition
-        NumberAnimation { property: "y"; duration: 300; easing.type: Easing.OutQuad; }
+        NumberAnimation { property: "y"; duration: 200; easing.type: Easing.OutQuad; }
     }
 
 
     Component.onCompleted: {
         tree.__listView.add = expandTransition;
         tree.__listView.displaced = displacedTransition;
-        tree.__listView.removeDisplaced = removeTransition;
+        tree.__listView.removeDisplaced = displacedTransition;
     }
 
 }

@@ -111,6 +111,11 @@ void TopicViewer::CreateModel()
   }
 }
 
+QStandardItemModel *TopicViewer::Model()
+{
+    return (QStandardItemModel *)this->dataPtr->model;
+}
+
 //////////////////////////////////////////////////
 void TopicViewer::AddTopic(const std::string &_topic,
                            const std::string &_msg)

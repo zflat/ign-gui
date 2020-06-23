@@ -59,6 +59,8 @@ namespace plugins
     /// \brief Create the fields model
     private: void CreateModel();
 
+    public: QStandardItemModel *Model();
+
     /// \brief add a topic to the model
     /// \param[in] _topic topic name to be displayed
     /// \param[in] _msg topic's msg type
