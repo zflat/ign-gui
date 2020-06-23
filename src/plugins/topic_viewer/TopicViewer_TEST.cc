@@ -139,8 +139,8 @@ TEST(TopicViewerTest, Model)
     EXPECT_EQ(foundCollision, true);
     EXPECT_EQ(foundInt, true);
 
-    auto treeWidget = plugin->findChild<QTreeWidget *>("treeView");
-    auto treeView = plugin->findChild<QTreeView *>("treeView");
-    bool found = treeView || treeWidget;
+//    auto treeWidget = plugin->findChild<QTreeWidget *>("treeView");
+//    auto treeView = plugin->findChild<QTreeView *>("treeView");
+//    bool found = treeView || treeWidget;
 //    ASSERT_EQ(true, found);
 }
