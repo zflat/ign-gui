@@ -1,13 +1,26 @@
+/*
+ * Copyright (C) 2020 Open Source Robotics Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
 #include <gtest/gtest.h>
 
 #include <ignition/common/Console.hh>
-
 #include "test_config.h"  // NOLINT(build/include)
 #include "ignition/gui/Application.hh"
 #include "ignition/gui/Plugin.hh"
 #include "ignition/gui/MainWindow.hh"
-#include <QTreeView>
-#include <QTreeWidget>
 #include "TopicViewer.hh"
 
 #define NAME_ROLE 51
@@ -55,11 +68,11 @@ TEST(TopicViewerTest, Model)
     transport::Node node;
 
     // int
-    auto pubInt = node.Advertise<msgs::Int32>("/IntTopic");
+    auto pubInt = node.Advertise<msgs::Int32>("/int_topic");
     msgs::Int32 msgInt;
 
     // collision
-    auto pub = node.Advertise<msgs::Collision> ("/CollisionTopic");
+    auto pub = node.Advertise<msgs::Collision> ("/collision_topic");
     msgs::Collision msg;
 
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -73,7 +86,19 @@ TEST(TopicViewerTest, Model)
     Application app(g_argc, g_argv);
     app.AddPluginPath(std::string(PROJECT_BINARY_PATH) + "/lib");
 
-    EXPECT_TRUE(app.LoadPlugin("TopicViewer"));
+    // Load plugin
+    const char *pluginStr =
+      "<plugin filename=\"TopicViewer\">"
+        "<ignition-gui>"
+          "<title>Topic Viewer</title>"
+        "</ignition-gui>"
+      "</plugin>";
+
+    tinyxml2::XMLDocument pluginDoc;
+    EXPECT_EQ(tinyxml2::XML_SUCCESS, pluginDoc.Parse(pluginStr));
+
+    EXPECT_TRUE(app.LoadPlugin("TopicViewer",
+        pluginDoc.FirstChildElement("plugin")));
 
     // Get main window
     auto win = app.findChild<MainWindow *>();
@@ -98,11 +123,14 @@ TEST(TopicViewerTest, Model)
     bool foundCollision = false;
     bool foundInt = false;
 
+    EXPECT_TRUE(root->rowCount() >= 2);
+
+    // check plotable items
     for (int i = 0; i < root->rowCount(); ++i)
     {
         auto child = root->child(i);
 
-        if (child->data(NAME_ROLE) == "/CollisionTopic")
+        if (child->data(NAME_ROLE) == "/collision_topic")
         {
             foundCollision = true;
 
@@ -116,10 +144,10 @@ TEST(TopicViewerTest, Model)
             EXPECT_EQ(x->data(NAME_ROLE), "x");
             EXPECT_EQ(x->data(TYPE_ROLE), "double");
             EXPECT_EQ(x->data(PATH_ROLE), "pose-position-x");
-            EXPECT_EQ(x->data(TOPIC_ROLE), "/CollisionTopic");
-            EXPECT_EQ(x->data(PLOT_ROLE), true);
+            EXPECT_EQ(x->data(TOPIC_ROLE), "/collision_topic");
+            EXPECT_TRUE(x->data(PLOT_ROLE).toBool());
         }
-        else if (child->data(NAME_ROLE) == "/IntTopic")
+        else if (child->data(NAME_ROLE) == "/int_topic")
         {
             foundInt = true;
 
@@ -131,16 +159,11 @@ TEST(TopicViewerTest, Model)
             EXPECT_EQ(data->data(NAME_ROLE), "data");
             EXPECT_EQ(data->data(TYPE_ROLE), "int32");
             EXPECT_EQ(data->data(PATH_ROLE), "data");
-            EXPECT_EQ(data->data(TOPIC_ROLE), "/IntTopic");
-            EXPECT_EQ(data->data(PLOT_ROLE), true);
+            EXPECT_EQ(data->data(TOPIC_ROLE), "/int_topic");
+            EXPECT_TRUE(data->data(PLOT_ROLE).toBool());
         }
     }
 
-    EXPECT_EQ(foundCollision, true);
-    EXPECT_EQ(foundInt, true);
-
-//    auto treeWidget = plugin->findChild<QTreeWidget *>("treeView");
-//    auto treeView = plugin->findChild<QTreeView *>("treeView");
-//    bool found = treeView || treeWidget;
-//    ASSERT_EQ(true, found);
+    EXPECT_TRUE(foundCollision);
+    EXPECT_TRUE(foundInt);
 }

@@ -19,7 +19,7 @@
 #include <ignition/msgs.hh>
 #include <ignition/transport/Node.hh>
 
-// #include "ignition/gui/Iface.hh"
+#include "ignition/gui/Iface.hh"
 #include "ignition/gui/Plugin.hh"
 #include "ignition/gui/MainWindow.hh"
 
