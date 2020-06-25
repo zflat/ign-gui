@@ -14,8 +14,9 @@
  * limitations under the License.
  *
 */
-#include "TopicViewer.hh"
 #include <ignition/plugin/Register.hh>
+
+#include "TopicViewer.hh"
 
 #define NAME_KEY "name"
 #define TYPE_KEY "type"
@@ -61,6 +62,7 @@ namespace plugins
 }
 }
 }
+
 using namespace ignition;
 using namespace gui;
 using namespace plugins;
@@ -111,9 +113,10 @@ void TopicViewer::CreateModel()
   }
 }
 
+//////////////////////////////////////////////////
 QStandardItemModel *TopicViewer::Model()
 {
-    return (QStandardItemModel *)this->dataPtr->model;
+    return reinterpret_cast<QStandardItemModel *>(this->dataPtr->model);
 }
 
 //////////////////////////////////////////////////
@@ -155,8 +158,8 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
   auto msgDescriptor = msg->GetDescriptor();
   if (!msgDescriptor)
   {
-      ignerr << "Null Descriptor of Msg: " << _msgType << std::endl;
-      return;
+    ignerr << "Null Descriptor of Msg: " << _msgType << std::endl;
+    return;
   }
 
   for (int i = 0 ; i < msgDescriptor->field_count(); ++i)

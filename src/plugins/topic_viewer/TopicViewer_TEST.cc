@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 
 #include <ignition/common/Console.hh>
-#include "test_config.h"  // NOLINT(build/include)
+#include "test_config.h"
 #include "ignition/gui/Application.hh"
 #include "ignition/gui/Plugin.hh"
 #include "ignition/gui/MainWindow.hh"
@@ -123,7 +123,7 @@ TEST(TopicViewerTest, Model)
     bool foundCollision = false;
     bool foundInt = false;
 
-    EXPECT_TRUE(root->rowCount() >= 2);
+    EXPECT_GE(root->rowCount(), 2);
 
     // check plotable items
     for (int i = 0; i < root->rowCount(); ++i)
