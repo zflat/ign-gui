@@ -36,7 +36,6 @@ namespace gui
 {
 namespace plugins
 {
-
   class TopicsModel;
   class TopicViewerPrivate;
 
@@ -115,10 +114,6 @@ namespace plugins
 
     /// \brief supported types for plotting
     private: std::vector<google::protobuf::FieldDescriptor::Type> plotableTypes;
-
-    /// \brief Print all the roles of the item
-    /// \param[in] _index index of the item in the model
-    public: Q_INVOKABLE void print(const QModelIndex _index);
 
     /// \brief Pointer to private data.
     private: std:: unique_ptr<TopicViewerPrivate> dataPtr;

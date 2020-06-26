@@ -158,7 +158,7 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
   auto msgDescriptor = msg->GetDescriptor();
   if (!msgDescriptor)
   {
-    ignerr << "Null Descriptor of Msg: " << _msgType << std::endl;
+    ignwarn << "Null Descriptor of Msg: " << _msgType << std::endl;
     return;
   }
 
@@ -170,12 +170,10 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
         continue;
 
     auto messageType = msgField->message_type();
+
     if (messageType)
-    {
       AddField(msgItem, msgField->name(), messageType->name());
-      igndbg << "name: " << msgField->name() <<
-                ", type: " << messageType->name() << std::endl;
-    }
+
     else
     {
       auto msgFieldItem = this->FactoryItem(msgField->name(),
@@ -272,24 +270,12 @@ std::string TopicViewer::ItemPath(const QStandardItem *_item) const
 
 /////////////////////////////////////////////////
 bool TopicViewer::IsPlotable(
-        const google::protobuf::FieldDescriptor::Type &_type)
+    const google::protobuf::FieldDescriptor::Type &_type)
 {
     return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
                      _type) != this->plotableTypes.end();
 }
 
-////////////////////////////////////////////
-void TopicViewer::print(const QModelIndex _index)
-{
-  auto item = this->dataPtr->model->itemFromIndex(_index);
-  auto name = item->data(NAME_ROLE).toString().toStdString();
-  auto type = item->data(TYPE_ROLE).toString().toStdString();
-  auto path = item->data(PATH_ROLE).toString().toStdString();
-  auto topic = item->data(TOPIC_ROLE).toString().toStdString();
-
-  igndbg << "name: " << name << ", type: " << type <<
-               ", path: " << path << ", topic: " << topic << std::endl;
-}
 
 // Register this plugin
 IGNITION_ADD_PLUGIN(ignition::gui::plugins::TopicViewer,

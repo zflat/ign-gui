@@ -64,6 +64,8 @@ TEST(TopicViewerTest, Load)
 
 TEST(TopicViewerTest, Model)
 {
+    setenv("IGN_PARTITION", "ign-gazebo-test", 1);
+
     // =========== Publish =================
     transport::Node node;
 
@@ -161,6 +163,10 @@ TEST(TopicViewerTest, Model)
             EXPECT_EQ(data->data(PATH_ROLE), "data");
             EXPECT_EQ(data->data(TOPIC_ROLE), "/int_topic");
             EXPECT_TRUE(data->data(PLOT_ROLE).toBool());
+        }
+        else
+        {
+            EXPECT_TRUE(false);
         }
     }
 
