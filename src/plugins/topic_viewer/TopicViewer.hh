@@ -15,9 +15,6 @@
  *
 */
 #include <QStandardItem>
-#include <QStandardItemModel>
-#include <QHash>
-#include <QByteArray>
 #include <QString>
 #include <QModelIndex>
 #include <string>
@@ -28,21 +25,17 @@
 #include <ignition/gui/Application.hh>
 #include <ignition/gui/Plugin.hh>
 
-#include <ignition/msgs.hh>
-#include <ignition/transport.hh>
 #include <ignition/transport/Node.hh>
 #include <ignition/transport/MessageInfo.hh>
 #include <ignition/transport/Publisher.hh>
-#include <ignition/common.hh>
-#include <ignition/gui.hh>
 
+#include <ignition/common.hh>
 namespace ignition
 {
 namespace gui
 {
 namespace plugins
 {
-
   class TopicsModel;
   class TopicViewerPrivate;
 
@@ -65,6 +58,8 @@ namespace plugins
     /// \brief Create the fields model
     private: void CreateModel();
 
+    public: QStandardItemModel *Model();
+
     /// \brief add a topic to the model
     /// \param[in] _topic topic name to be displayed
     /// \param[in] _msg topic's msg type
@@ -84,6 +79,8 @@ namespace plugins
     /// \param[in] _type type of the field of the item
     /// \param[in] _path a set of concatinate strings of parent msgs
     /// names that lead to that field, starting from the most parent
+    /// ex : if we have [Collision]msg contains [pose]msg contains [position]
+    /// msg contains [x,y,z] fields, so the path of x = "pose-position-x"
     /// \param[in] _topic the name of the most parent item
     /// \return the created Item
     private: QStandardItem *FactoryItem(const std::string &_name,
@@ -103,41 +100,20 @@ namespace plugins
 
     /// \brief get the topic name of selected item
     /// \param[in] _item ref to the item to get its parent topic
-    private: std::string TopicName(QStandardItem *_item);
+    private: std::string TopicName(const QStandardItem *_item) const;
 
     /// \brief full path starting from topic name till the msg name
     /// \param[in] _index index of the QStanadardItem
     /// \return string with all elements separated by '/'
-    private: std::string ItemPath(QStandardItem *_item);
+    private: std::string ItemPath(const QStandardItem *_item) const;
 
     /// \brief check if the type is supported in the plotting types
     /// \param[in] _type the msg type to check if it is supported
     private: bool IsPlotable(
               const google::protobuf::FieldDescriptor::Type &_type);
 
-    /// \brief check if the index is an absolute child
-    /// \param[in] _index a model index to the item
-    private: bool IsPlotable(QModelIndex _index);
-
     /// \brief supported types for plotting
     private: std::vector<google::protobuf::FieldDescriptor::Type> plotableTypes;
-
-    /// \brief mode to show or hide non plotting types
-    /// True: show only plottable fields in the model and skip the non plottable
-    /// False: show all fields including the non plottable fields
-    private: bool plottingMode{false};
-
-    /// \brief set the plotting mode to show/hide the plotable msgs
-    /// \param[in] _mode True if Plotable, False if not
-    public: void SetPlottingMode(bool _mode);
-
-    /// \brief get the plotting mode
-    /// \return True if Plotting mode is set (show only plottable)
-    public: bool PlottingMode();
-
-    /// \brief Print all the roles of the item
-    /// \param[in] _index index of the item in the model
-    public: Q_INVOKABLE void print(QModelIndex _index);
 
     /// \brief Pointer to private data.
     private: std:: unique_ptr<TopicViewerPrivate> dataPtr;

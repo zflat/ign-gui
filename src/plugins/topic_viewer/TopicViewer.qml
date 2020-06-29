@@ -23,6 +23,7 @@ import QtQuick.Controls.Material 2.1
 import QtQuick.Layouts 1.3
 
 TreeView {
+    objectName: "treeView"
     id:tree
     model: TopicsModel
 
@@ -54,7 +55,6 @@ TreeView {
     TableViewColumn
     {
         role: "name";
-        width: parent.width;
     }
 
     // =========== Selection ===========
@@ -80,9 +80,9 @@ TreeView {
         anchors.top: parent.top
         anchors.right: parent.right
 
+        Drag.mimeData: { "text/plain" : (model === null) ? "" : model.topic + "," + model.path }
 
         Drag.dragType: Drag.Automatic
-        Drag.mimeData: { "text/plain" : "TopicViewer" }
         Drag.supportedActions : Qt.CopyAction
         Drag.active: dragMouse.drag.active
         // a point to drag from
@@ -90,7 +90,8 @@ TreeView {
         Drag.hotSpot.y: itemHeight
 
         // used by DropArea that accepts the dragged items
-        function itemData () {
+        function itemData ()
+        {
             return {
                 "name": model.name,
                 "type": model.type,
@@ -112,7 +113,8 @@ TreeView {
                 parent.Drag.imageSource = result.url
             })
 
-            onReleased: {
+            onReleased:
+            {
                 // emit drop event to notify the DropArea (must manually)
                 parent.Drag.drop();
             }
@@ -131,13 +133,15 @@ TreeView {
                 tree.selection.setCurrentIndex(styleData.index,ItemSelectionModel.ClearAndSelect)
 
                 // the currentIndex of the tree.selection is not the same
-                // of the tree.currentIndex, so set the tree.currentIndex
+                // of the tree.currentIndex, so set the tree.currentIndex.
                 // this is the way to access it as it is read-only
                 tree.__currentRow = styleData.row
 
                 // set the focus to the selected item to receive the keyboard events
                 // this is useful to enable navigating with keyboard from the right position
                 item.forceActiveFocus();
+
+                tree.expandCollapseMsg();
             }
         }
 
@@ -176,15 +180,33 @@ TreeView {
         }
     }
 
-    onDoubleClicked:  {
-        tree.expandCollapseMsg();
-        TopicViewer.print(index);
-    }
-
     function expandCollapseMsg(){
         if (tree.isExpanded(currentIndex))
             tree.collapse(currentIndex)
         else
             tree.expand(tree.currentIndex);
     }
+
+    Transition {
+        id: expandTransition
+        NumberAnimation {
+            property: "y";
+            from: tree.__listView.currentItem.y;
+            duration: 200;
+            easing.type: Easing.OutQuad
+        }
+    }
+
+    Transition {
+        id: displacedTransition
+        NumberAnimation { property: "y"; duration: 200; easing.type: Easing.OutQuad; }
+    }
+
+
+    Component.onCompleted: {
+        tree.__listView.add = expandTransition;
+        tree.__listView.displaced = displacedTransition;
+        tree.__listView.removeDisplaced = displacedTransition;
+    }
+
 }
