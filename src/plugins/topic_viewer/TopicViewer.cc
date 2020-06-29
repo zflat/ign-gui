@@ -272,7 +272,7 @@ std::string TopicViewer::ItemPath(const QStandardItem *_item) const
 bool TopicViewer::IsPlotable(
     const google::protobuf::FieldDescriptor::Type &_type)
 {
-    return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
+  return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
                      _type) != this->plotableTypes.end();
 }
 
