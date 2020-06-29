@@ -185,7 +185,7 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
 
       // to make the plottable items draggable
       if (this->IsPlotable(msgField->type()))
-          msgFieldItem->setData(QVariant(true), PLOT_ROLE);
+        msgFieldItem->setData(QVariant(true), PLOT_ROLE);
     }
   }
 }
