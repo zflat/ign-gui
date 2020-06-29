@@ -77,7 +77,7 @@ namespace plugins
     /// \brief factory method for creating an item
     /// \param[in] _name the display name
     /// \param[in] _type type of the field of the item
-    /// \param[in] _path a set of concatinate strings of parent msgs
+    /// \param[in] _path a set of concatenate strings of parent msgs
     /// names that lead to that field, starting from the most parent
     /// ex : if we have [Collision]msg contains [pose]msg contains [position]
     /// msg contains [x,y,z] fields, so the path of x = "pose-position-x"
