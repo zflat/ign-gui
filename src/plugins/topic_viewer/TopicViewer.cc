@@ -116,7 +116,7 @@ void TopicViewer::CreateModel()
 //////////////////////////////////////////////////
 QStandardItemModel *TopicViewer::Model()
 {
-    return reinterpret_cast<QStandardItemModel *>(this->dataPtr->model);
+  return reinterpret_cast<QStandardItemModel *>(this->dataPtr->model);
 }
 
 //////////////////////////////////////////////////
