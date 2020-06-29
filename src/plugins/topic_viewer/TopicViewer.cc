@@ -167,7 +167,7 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
     auto msgField = msgDescriptor->field(i);
 
     if (msgField->is_repeated())
-        continue;
+      continue;
 
     auto messageType = msgField->message_type();
 
