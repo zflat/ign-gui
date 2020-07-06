@@ -172,4 +172,21 @@ TEST(TopicViewerTest, Model)
 
     EXPECT_TRUE(foundCollision);
     EXPECT_TRUE(foundInt);
+
+    // =========== Dynamic Adding / Removing =============
+
+    // Add
+    auto pubEcho = node.Advertise<msgs::StringMsg> ("/echo_topic");
+    msgs::Collision msgEcho;
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+    pubEcho.Publish(msgEcho);
+    // Remove
+    node.Unsubscribe("/int_topic");
+    // wait for update timeout
+    std::this_thread::sleep_for(std::chrono::milliseconds(700));
+
+    root = plugin->Model()->invisibleRootItem();
+
+    EXPECT_EQ(root->rowCount(), 2);
 }

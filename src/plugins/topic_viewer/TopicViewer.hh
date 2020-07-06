@@ -112,6 +112,9 @@ namespace plugins
     private: bool IsPlotable(
               const google::protobuf::FieldDescriptor::Type &_type);
 
+    /// \brief update the model according to the changes of the topics
+    public slots: void UpdateModel();
+
     /// \brief supported types for plotting
     private: std::vector<google::protobuf::FieldDescriptor::Type> plotableTypes;
 
