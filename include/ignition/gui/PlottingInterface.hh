@@ -166,7 +166,7 @@ class PlottingInterface : public QObject
   /// \brief param[in] _topic the topic that includes that field
   /// \brief param[in] _fieldPath path to the field to reach it from the msg
   /// \brief param[in] _chart chart id to be deattached to that field
-  public: Q_INVOKABLE void unsubscribe(QString _topic, QString _fieldPath, int _chart);
+  public slots: void unsubscribe(QString _topic, QString _fieldPath, int _chart);
 
   /// \brief set the plotting time
   /// \param[in] _timeout the time step of the plotting to update the plot each time step

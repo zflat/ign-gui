@@ -23,8 +23,8 @@ namespace gui
 {
 class PlottingIfacePrivate
 {
-    /// \brief responsible for transport messages and topics
-    public: Transport* transport;
+  /// \brief responsible for transport messages and topics
+  public: Transport* transport;
 };
 
 class TransportPrivate
@@ -225,17 +225,21 @@ Transport :: ~Transport()
 ////////////////////////////////////////////
 void Transport :: Unsubscribe(std::string _topic, std::string _fieldPath, int _chart)
 {
+  std::cout << "Unsubscribe from " << _topic << "&" << _fieldPath<< std::endl;
   if (this->dataPtr->topics.count(_topic))
   {
+      std::cout << "deleting it" << std::endl;
       this->dataPtr->topics[_topic]->UnRegister(_fieldPath, _chart);
 
       // if there is no registered fields, unsubscribe from the topic
       if (this->dataPtr->topics[_topic]->FieldCount() == 0)
       {
-        this->dataPtr->topics.erase(_fieldPath);
+        std::cout << "No other fields " << std::endl;
         this->dataPtr->node.Unsubscribe(_topic);
+        this->dataPtr->topics.erase(_topic);
       }
   }
+  std::cout << "=====================" << std::endl;
 }
 
 ////////////////////////////////////////////
@@ -342,7 +346,7 @@ void PlottingInterface::UpdateGui()
   for (auto topic : topics)
   {
     auto fields = topic.second->Fields();
-
+    std::cout << "topics:" << topics.size() << "   fields: " << fields.size() << std::endl;
     for (auto field : fields)
     {
       auto charts = field.second->Charts();
@@ -361,3 +365,4 @@ void PlottingInterface::UpdateGui()
 
   this->time++;
 }
+
