@@ -27,10 +27,9 @@
 #include <ignition/transport/Node.hh>
 #include <ignition/transport/MessageInfo.hh>
 #include <ignition/transport/Publisher.hh>
-#include <ignition/gui/Application.hh>
-#include "ignition/gui/Export.hh"
-#include <ignition/common.hh>
-#include <ignition/gui.hh>
+#include <map>
+#include <set>
+#include <string>
 #include <memory>
 
 namespace ignition
@@ -77,7 +76,7 @@ class Topic
   private: std::map<std::string, Field*> fields;
 
   /// \brief Constructor
-  public: Topic(std::string _name);
+  public: explicit Topic(std::string _name);
 
   /// \brief get topic name
   public: std::string Name();
@@ -107,7 +106,7 @@ class Topic
 
 class TransportPrivate;
 
-/// \brief handle Transport Topics Subscribing for one object(Chart) (will extend)
+/// \brief handle Transport Topics Subscribing for one object(Chart)
 class Transport
 {
   /// \brief Constructor
@@ -116,12 +115,24 @@ class Transport
   /// \brief Destructor
   public: ~Transport();
 
-  /// \brief unsubscribe from the subscribed topics
-  public: void Unsubscribe(std::string _topic, std::string _fieldPath, int _chart);
+  /// \brief unsubscribe/deattatch a field from a certain chart
+  /// \param[in] _topic topic name
+  /// \param[in] _fieldPath field path ID
+  /// \param[in] _chart chart ID
+  public: void Unsubscribe(std::string _topic,
+                           std::string _fieldPath,
+                           int _chart);
 
-  public: void Subscribe(std::string _topic, std::string _fieldPath, int _chart);
+  /// \brief subscribe/attatch a field from a certain chart
+  /// \param[in] _topic topic name
+  /// \param[in] _fieldPath field path ID
+  /// \param[in] _chart chart ID
+  public: void Subscribe(std::string _topic,
+                         std::string _fieldPath,
+                         int _chart);
 
-  /// \brief is topic exist in the transport network and not necessary to be registered
+  /// \brief is the topic exist in the transport network
+  /// \param[in] _topic topic name
   /// \return True if found in the transport, False if not found
   public: bool TopicFound(const std::string &_topic);
 
@@ -160,19 +171,27 @@ class PlottingInterface : public QObject
   /// \brief param[in] _topic the topic that includes that field
   /// \brief param[in] _fieldPath path to the field to reach it from the msg
   /// \brief param[in] _chart chart id to be attached to that field
-  public slots: void subscribe(QString _topic, QString _fieldPath, int _chart);
+  public slots: void subscribe(QString _topic,
+                               QString _fieldPath,
+                               int _chart);
 
   /// \brief unsubscribe from a field and deattach it from a chart
   /// \brief param[in] _topic the topic that includes that field
   /// \brief param[in] _fieldPath path to the field to reach it from the msg
   /// \brief param[in] _chart chart id to be deattached to that field
-  public slots: void unsubscribe(QString _topic, QString _fieldPath, int _chart);
+  public slots: void unsubscribe(QString _topic,
+                                 QString _fieldPath,
+                                 int _chart);
 
   /// \brief set the plotting time
-  /// \param[in] _timeout the time step of the plotting to update the plot each time step
+  /// \param[in] _timeout the timeout to update the plot
   public: Q_INVOKABLE void setSimTime(double _timeout);
 
-  /// \brief update the charts with (x,y) point of a specfic field to specific chart
+  /// \brief plot a point to a chart
+  /// \param[in] _chart chart ID
+  /// \param[in] _fieldID field path ID
+  /// \param[in] _x x coordinates of the plot point
+  /// \param[in] _y y coordinates of the plot point
   signals: void plot(int _chart, QString _fieldID, double _x, double _y);
 
   private: std::unique_ptr<PlottingIfacePrivate> dataPtr;

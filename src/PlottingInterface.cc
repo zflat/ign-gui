@@ -16,6 +16,9 @@
 */
 
 #include <ignition/gui/PlottingInterface.hh>
+#include <ignition/gui/Application.hh>
+#include <ignition/common.hh>
+#include <ignition/gui.hh>
 
 namespace ignition
 {
@@ -132,7 +135,8 @@ std::map<std::string, Field*>& Topic::Fields()
 //////////////////////////////////////////////////////
 void Topic::Callback(const google::protobuf::Message &_msg)
 {
-  for (auto fieldIt = this->fields.begin(); fieldIt != this->fields.end(); fieldIt++)
+  for (auto fieldIt = this->fields.begin(); fieldIt != this->fields.end();
+       fieldIt++)
   {
       auto msgDescriptor = _msg.GetDescriptor();
       auto ref = _msg.GetReflection();
@@ -153,10 +157,12 @@ void Topic::Callback(const google::protobuf::Message &_msg)
 
         if (valueMsg)
           valueMsg = ref->MutableMessage
-          (const_cast<google::protobuf::Message *>(valueMsg), field);
+                  (const_cast<google::protobuf::Message *>(valueMsg), field);
         else
-          valueMsg = ref->MutableMessage
-                  (const_cast<google::protobuf::Message *>(&_msg), field);
+        {
+            valueMsg = ref->MutableMessage
+                    (const_cast<google::protobuf::Message *>(&_msg), field);
+        }
 
           ref = valueMsg->GetReflection();
       }
@@ -209,12 +215,12 @@ double Topic::PlotData(const google::protobuf::Message &_msg,
 }
 
 //  ================= Transport ==================
-Transport :: Transport() : dataPtr(new TransportPrivate)
+Transport::Transport() : dataPtr(new TransportPrivate)
 {
 }
 
 ////////////////////////////////////////////
-Transport :: ~Transport()
+Transport::~Transport()
 {
   // unsubscribe from all topics in the transport
   for (auto topicIt = this->dataPtr->topics.begin();
@@ -223,7 +229,9 @@ Transport :: ~Transport()
 }
 
 ////////////////////////////////////////////
-void Transport :: Unsubscribe(std::string _topic, std::string _fieldPath, int _chart)
+void Transport::Unsubscribe(std::string _topic,
+                              std::string _fieldPath,
+                              int _chart)
 {
   std::cout << "Unsubscribe from " << _topic << "&" << _fieldPath<< std::endl;
   if (this->dataPtr->topics.count(_topic))
@@ -243,12 +251,10 @@ void Transport :: Unsubscribe(std::string _topic, std::string _fieldPath, int _c
 }
 
 ////////////////////////////////////////////
-void Transport::Subscribe(std::string _topic, std::string _fieldPath, int _chart)
+void Transport::Subscribe(std::string _topic,
+                          std::string _fieldPath,
+                          int _chart)
 {
-  // check if topic found in the transport network
-//    if (!this->TopicFound(_topic))
-//        return;
-
   // new topic
   if (this->dataPtr->topics.count(_topic) == 0)
   {
@@ -284,7 +290,7 @@ bool Transport::TopicFound(const std::string &_topic)
   // topic is unsubscribed ... update the model
   if (foundTopic == topics.end())
   {
-    // TODO : recreate the topics model
+    // TODO(Amr) : recreate the topics model
     return false;
   }
   return true;
@@ -292,7 +298,7 @@ bool Transport::TopicFound(const std::string &_topic)
 
 
 // ================ Plotting Interface ==================
-PlottingInterface :: PlottingInterface() : QObject(),
+PlottingInterface::PlottingInterface() : QObject(),
     dataPtr(std::make_unique<PlottingIfacePrivate>())
 {
   this->dataPtr->transport = new Transport();
@@ -307,7 +313,9 @@ PlottingInterface::~PlottingInterface()
 }
 
 //////////////////////////////////////////////////////
-void PlottingInterface::unsubscribe(QString _topic, QString _fieldPath, int _chart)
+void PlottingInterface::unsubscribe(QString _topic,
+                                    QString _fieldPath,
+                                    int _chart)
 {
   this->dataPtr->transport->Unsubscribe(_topic.toStdString(),
                                         _fieldPath.toStdString(),
@@ -321,7 +329,9 @@ void PlottingInterface::setSimTime(double _timeout)
 }
 
 //////////////////////////////////////////////////////
-void PlottingInterface :: subscribe(QString _topic, QString _fieldPath, int _chart)
+void PlottingInterface::subscribe(QString _topic,
+                                    QString _fieldPath,
+                                    int _chart)
 {
   this->dataPtr->transport->Subscribe(_topic.toStdString(),
                                       _fieldPath.toStdString(),
@@ -333,7 +343,7 @@ void PlottingInterface::InitTimer()
 {
   this->timer = new QTimer();
   this->timer->setInterval(50);
-  connect(this->timer,SIGNAL(timeout()),this,SLOT(UpdateGui()));
+  connect(this->timer, SIGNAL(timeout()), this, SLOT(UpdateGui()));
   this->timer->start();
 }
 
@@ -346,7 +356,7 @@ void PlottingInterface::UpdateGui()
   for (auto topic : topics)
   {
     auto fields = topic.second->Fields();
-    std::cout << "topics:" << topics.size() << "   fields: " << fields.size() << std::endl;
+
     for (auto field : fields)
     {
       auto charts = field.second->Charts();
@@ -365,4 +375,3 @@ void PlottingInterface::UpdateGui()
 
   this->time++;
 }
-
