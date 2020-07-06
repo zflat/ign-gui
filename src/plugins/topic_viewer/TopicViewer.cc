@@ -58,6 +58,12 @@ namespace plugins
 
     /// \brief Model to create it from the available topics and messages
     public: TopicsModel *model;
+
+    /// \brief Timer to update the model and keep track of its changes
+    public: QTimer *timer;
+
+    /// \brief topic: msgType map to keep track of the model current topics
+    public: std::map<std::string, std::string> currentTopics;
   };
 }
 }
@@ -82,6 +88,10 @@ TopicViewer::TopicViewer() : Plugin(), dataPtr(new TopicViewerPrivate)
 
   ignition::gui::App()->Engine()->rootContext()->setContextProperty(
                 "TopicsModel", this->dataPtr->model);
+
+  this->dataPtr->timer = new QTimer();
+  connect(this->dataPtr->timer, SIGNAL(timeout()), this, SLOT(UpdateModel()));
+  this->dataPtr->timer->start(1000);
 }
 
 //////////////////////////////////////////////////
@@ -129,6 +139,9 @@ void TopicViewer::AddTopic(const std::string &_topic,
   parent->appendRow(topicItem);
 
   this->AddField(topicItem , _msg, _msg);
+
+  // store the topics to keep track of them
+  this->dataPtr->currentTopics[_topic] = _msg;
 }
 
 //////////////////////////////////////////////////
@@ -272,8 +285,62 @@ std::string TopicViewer::ItemPath(const QStandardItem *_item) const
 bool TopicViewer::IsPlotable(
     const google::protobuf::FieldDescriptor::Type &_type)
 {
-    return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
+  return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
                      _type) != this->plotableTypes.end();
+}
+
+/////////////////////////////////////////////////
+void TopicViewer::UpdateModel()
+{
+  // get the current topics in the network
+  std::vector<std::string> topics;
+  this->dataPtr->node.TopicList(topics);
+
+  // initialize the topics with the old topics & remove every matched topic
+  // when you finish advertised topics the remaining topics will be removed
+  std::map<std::string, std::string> topicsToRemove =
+          this->dataPtr->currentTopics;
+
+  for (unsigned int i = 0; i < topics.size(); ++i)
+  {
+    // get the msg type
+    std::vector<ignition::transport::MessagePublisher> infoMsgs;
+    this->dataPtr->node.TopicInfo(topics[i], infoMsgs);
+    std::string msgType = infoMsgs[0].MsgTypeName();
+
+    // skip the matched topics
+    if (this->dataPtr->currentTopics.count(topics[i]) &&
+            this->dataPtr->currentTopics[topics[i]] == msgType)
+    {
+      topicsToRemove.erase(topics[i]);
+      continue;
+    }
+
+    // new topic
+    this->AddTopic(topics[i], msgType);
+  }
+
+  // remove the topics that don't exist in the network
+  for (auto topic : topicsToRemove)
+  {
+    auto root = this->dataPtr->model->invisibleRootItem();
+
+    // search for the topic in the model
+    for (int i = 0; i < root->rowCount(); ++i)
+    {
+      auto child = root->child(i);
+
+      if (child->data(NAME_ROLE).toString().toStdString() == topic.first &&
+              child->data(TYPE_ROLE).toString().toStdString() == topic.second)
+      {
+        // remove from model
+        root->removeRow(i);
+        // remove from topics as it is a dangling topic
+        this->dataPtr->currentTopics.erase(topic.first);
+        break;
+      }
+    }
+  }
 }
 
 
