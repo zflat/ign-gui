@@ -233,21 +233,17 @@ void Transport::Unsubscribe(std::string _topic,
                               std::string _fieldPath,
                               int _chart)
 {
-  std::cout << "Unsubscribe from " << _topic << "&" << _fieldPath<< std::endl;
   if (this->dataPtr->topics.count(_topic))
   {
-      std::cout << "deleting it" << std::endl;
       this->dataPtr->topics[_topic]->UnRegister(_fieldPath, _chart);
 
       // if there is no registered fields, unsubscribe from the topic
       if (this->dataPtr->topics[_topic]->FieldCount() == 0)
       {
-        std::cout << "No other fields " << std::endl;
         this->dataPtr->node.Unsubscribe(_topic);
         this->dataPtr->topics.erase(_topic);
       }
   }
-  std::cout << "=====================" << std::endl;
 }
 
 ////////////////////////////////////////////

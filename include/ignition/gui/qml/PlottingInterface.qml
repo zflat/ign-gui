@@ -161,7 +161,7 @@ Column
 
             // ======= swapped chart =======
             charts[Id].parent = chartsLayout;
-            charts[Id].x = 0;
+            charts[Id].x = charts[mainChartID].x;
             charts[Id].y = 0;
             charts[Id].height = Qt.binding( function() {return chartsLayout.height / chartsLayout.heightFactor});
             charts[Id].width = Qt.binding( function() {return chartsLayout.width});

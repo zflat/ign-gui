@@ -21,6 +21,7 @@ set (gtest_sources
   Helpers_TEST
   ign_TEST
   MainWindow_TEST
+  PlottingInterface_TEST
   Plugin_TEST
   SearchModel_TEST
 )
