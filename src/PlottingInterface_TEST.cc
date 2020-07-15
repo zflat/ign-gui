@@ -137,14 +137,10 @@ TEST(PlottingInterfaceTest, Transport)
     EXPECT_EQ(int(topics.size()), 1);
 }
 
-//// test class [ Under Progress ]
 //class PlotTest : public QObject
 //{
 //    Q_OBJECT
-//    public : PlotTest(PlottingInterface *plotIface)
-//    {
-//        connect(plotIface, SIGNAL(plot()), this, SLOT(plot()));
-//    }
+//    public: PlotTest(): QObject() {}
 //    public slots: void plot(int _chart, QString _fieldID, double _x, double _y)
 //    {
 //        EXPECT_EQ(_chart, 1);
@@ -154,12 +150,11 @@ TEST(PlottingInterfaceTest, Transport)
 //    }
 //};
 
-
 //TEST(PlottingInterfaceTest, PlottingIface)
 //{
-
 //    auto PlottingIface = new PlottingInterface();
-//    auto plotTest = new PlotTest(PlottingIface);
+//    auto plotTest = new PlotTest();
+//    QObject::connect(PlottingIface, SIGNAL(plot()), plotTest, SLOT(plot()));
 
 //    transport::Node node;
 
@@ -179,4 +174,3 @@ TEST(PlottingInterfaceTest, Transport)
 //    delete plotTest;
 //    delete PlottingIface;
 //}
-
