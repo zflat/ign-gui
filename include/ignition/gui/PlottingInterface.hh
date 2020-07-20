@@ -182,6 +182,7 @@ class PlottingInterface : public QObject
   public slots: void unsubscribe(QString _topic,
                                  QString _fieldPath,
                                  int _chart);
+  public slots: void moveCharts();
 
   /// \brief set the plotting time
   /// \param[in] _timeout the timeout to update the plot
@@ -193,6 +194,8 @@ class PlottingInterface : public QObject
   /// \param[in] _x x coordinates of the plot point
   /// \param[in] _y y coordinates of the plot point
   signals: void plot(int _chart, QString _fieldID, double _x, double _y);
+
+  signals: void moveChart();
 
   private: std::unique_ptr<PlottingIfacePrivate> dataPtr;
 };

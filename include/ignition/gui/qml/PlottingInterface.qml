@@ -49,41 +49,67 @@ Column
         id : chartsLayout
 
         width: parent.width
-        height: parent.height ? parent.height - parent.buttonsHeight - rowCharts.height : 0
+        height: parent.height ? parent.height - rowCharts.height : 0
 
         property int chartMinHeight: 300
         property int heightFactor: 0
     }
 
-    Button {
+
+    Rectangle {
         id : addBtn
 
-        width: 400
-        height: buttonsHeight - 5
         anchors.right: parent.right
-        text:  "Add"
+        anchors.top: parent.top
+        anchors.margins: 10
 
-        onClicked: {
-            if (Object.keys(charts).length == 2)
-            {
-                multiChartsMode = true;
-                var firstChart = true;
-                for (var i = 0; i < chartsLayout.children.length; i++)
+        width: 50
+        height: 50
+        radius: width/2
+        color: "black"
+
+        Text {
+            text:  "+"
+            font.weight: Font.bold
+            font.pixelSize: parent.width/2
+            color: "white"
+            anchors.centerIn: parent
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered:{
+                addBtn.opacity = 0.8;
+                cursorShape = Qt.PointingHandCursor;
+            }
+            onExited: {
+                addBtn.opacity = 1;
+                cursorShape =  Qt.ArrowCursor
+            }
+
+            onClicked: {
+                if (Object.keys(charts).length == 2)
                 {
-                    // skip the first one
-                    if (firstChart)
+                    multiChartsMode = true;
+                    var firstChart = true;
+                    for (var i = 0; i < chartsLayout.children.length; i++)
                     {
-                        firstChart = false;
-                        // make that chart has a full size
-                        chartsLayout.heightFactor = 1
-                        continue;
+                        // skip the first one
+                        if (firstChart)
+                        {
+                            firstChart = false;
+                            // make that chart has a full size
+                            chartsLayout.heightFactor = 1
+                            continue;
+                        }
+                        var chart = chartsLayout.children[i];
+                        reallocateChart(chart);
                     }
-                    var chart = chartsLayout.children[i];
-                    reallocateChart(chart);
-                }
-            } // end if
+                } // end if
 
-            addChart();
+                addChart();
+            }
         }
     }
 
@@ -177,6 +203,12 @@ Column
         onPlot : function (_chart, _fieldID, _x, _y)
         {
             charts[_chart].appendPoint(_fieldID, _x, _y);
+        }
+        onMoveChart :function() {
+            addBtn.text = "start"
+            for (var _chart of Object.keys(charts))
+                charts[_chart].moveChart();
+            addBtn.text = "end"
         }
     }
 

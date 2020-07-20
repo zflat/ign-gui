@@ -22,12 +22,16 @@ Column {
     {
         chart.opacity = _opacity;
     }
+    function moveChart()
+    {
+        chart.scrollRight(chart.width/10);
+    }
 
     // =============== Fields info Rectangle ================
     Rectangle{
         id: infoRect
         width: parent.width
-        height: parent.height / 10
+        height: (multiChartsMode) ? 0 : parent.height / 10
         color: (Material.theme == Material.Light) ? Material.color(Material.Grey,Material.Shade200)
                                                   : Material.color(Material.BlueGrey, Material.Shade800)
         // make it scrolable
@@ -77,7 +81,14 @@ Column {
             var field = fieldInfo.createObject(row);
             field.width = 150;
             field.height = Qt.binding( function() {return infoRect.height * 0.8} );
-            field.y = Qt.binding( function() {return (infoRect.height - field.height)/2} );
+            field.y = Qt.binding( function()
+            {
+                if (infoRect.height)
+                    return (infoRect.height - field.height)/2;
+                else
+                    return 0;
+            }
+            );
 
             // update field data
             field.topic = topic;
@@ -102,6 +113,7 @@ Column {
                 clip: true
 
                 MouseArea {
+                    id : fieldInfoMouse
                     anchors.fill: parent
                     hoverEnabled: true
                     onEntered: enterAnimation.start();
@@ -110,11 +122,26 @@ Column {
 
                 Text {
                     id: fieldname
-                    anchors.centerIn: parent
-                    text: component.topic + "-"+ component.path
+//                    anchors.centerIn: parent
+                    text: component.topic + "/"+ component.path
                     color: "white"
                     elide: Text.ElideRight
+                    width: parent.width * 0.9
+                    anchors.verticalCenter: parent.verticalCenter
                 }
+
+                ToolTip {
+                    id: tool_tip
+                    delay: 1000
+                    timeout: 2000
+                    text: component.topic + "-"+ component.path;
+                    visible: fieldInfoMouse.containsMouse
+                    y: fieldInfoMouse.mouseY
+                    x: fieldInfoMouse.mouseX
+                    enter: null
+                    exit: null
+                }
+
             }
 
             function setText(text) {
@@ -125,8 +152,8 @@ Column {
             Rectangle {
                 id: exitBtn
                 radius: width / 2
-                height: parent.height * 0.5;
-                width: parent.width * 0.15
+                height: parent.height * 0.4;
+                width: parent.width * 0.2
                 color: "red"
                 opacity: 0
                 anchors.right: parent.right
@@ -176,22 +203,43 @@ Column {
         theme: (Material.theme == Material.Light) ? ChartView.ChartThemeLight: ChartView.ChartThemeDark
 
         property var serieses: ({})
+        property var textSerieses: ({})
         property var colors: ["red","blue","cyan","yellow","green","lightGray"]
         property int indexColor: 0
+
+        Rectangle {
+            id: hoverLine;
+            visible: true;
+            width: 2;
+            height: chart.plotArea.height;
+            x: chart.plotArea.x
+            y:chart.plotArea.y
+            color: "red"
+        }
+        Component {
+            id: seriesText;
+            Text {
+                id: text
+                text: "xxx"
+                function setPointText(x,y) {
+                    text.text = "(" + x.toString() + ", " + y.toString() + ")";
+                }
+            }
+        }
 
         // for vertical line hover
         MouseArea {
             id:areaView
             anchors.fill:parent
             hoverEnabled: true
-            property bool flag: false
             cursorShape: (multiChartsMode) ? Qt.PointingHandCursor : Qt.ArrowCursor
+
+            property bool flag: true
 
             onEntered: {
                 if(flag && ! multiChartsMode)
                 {
-                    // TODO : draw a vertical line and show its point value
-                    flag=false;
+                    hoverLine.visible = true;
                 }
                 else if (multiChartsMode)
                 {
@@ -203,15 +251,99 @@ Column {
                 {
                     chart.opacity = 1;
                 }
+                hoverLine.visible = false;
+            }
+            onPositionChanged: {
+                if (flag) {
+                    // move the hover line with the x
+                    hoverLine.x = mouseX
+
+                    for (var ID in Object.keys(chart.textSerieses))
+                    {
+                        chart.textSerieses[ID].destroy();
+                        delete chart.textSerieses[ID];
+                    }
+                    for (var key in Object.keys(serieses))
+                    {
+                        // get the value of the series at the mouse x position
+//                        var point = chart.mapToValue(mouseX, serieses[key]);
+                        // draw a text at that point to show the value of the series
+                        var text = seriesText.createObject(chart, {
+                                                               x : mouseX,
+                                                               y : mouseY // change y to value of the curve
+                                                           });
+                        text.setPointText(mouseX, mouseY); // change  to value of the curve
+
+                        textSerieses[key] = text;
+                    }
+                }
             }
 
-            onClicked: main.clicked(chartID);
+
+            onClicked: {
+                main.clicked(chartID);
+                chart.scrollRight(chart.width/10);
+            }
+            onDoubleClicked: chart.zoomReset();
+
+            // ======== Under progress ==========
+            property double zoomScale : 1
+            property double prevX: chart.width/2
+            property double prevY: chart.height/2
+            property double prevWidth: chart.width
+            property double prevHeight: chart.height
+/*            onWheel:{
+                // =========== Calculate angle ================
+                var angle = 0.0;
+                var wheelValue = wheel.angleDelta.y;
+                if (wheelValue < 10 && wheelValue > 0)
+                    angle = 0.01 * wheelValue;
+                else if (wheelValue > -10 && wheelValue < 0)
+                    angle = - 0.01 * wheelValue;
+                else if (wheelValue === 120)
+                    angle = 0.1;
+                else if (wheelValue === -120)
+                    angle = -0.1;
+
+
+                // =============== Calculate Percentages ===============
+                var percentageX_Width  = Math.abs(wheel.x - chart.width/2) / (chart.width/2);
+                var percentageY_Height = Math.abs(wheel.y - chart.height/2) / (chart.height/2);
+
+                console.log(percentageX_Width, wheel.x, chart.width/2, "   PREVX: ",prevX, prevWidth)
+
+                if (wheel.x < prevX)
+                    percentageX_Width *= -1;
+                if (wheel.y < prevY)
+                    percentageY_Height *= -1;
+
+                if (zoomScale + angle > 0)
+                    zoomScale += angle;
+
+                prevX += percentageX_Width * (prevWidth/2);
+                prevY += percentageY_Height * (prevHeight/2);
+                prevWidth = chart.height/zoomScale;
+                prevHeight = chart.width/zoomScale;
+                var r = Qt.rect(prevX-prevWidth/2, prevY - prevHeight/2, prevWidth, prevHeight);
+
+                chart.zoomReset();
+                chart.zoomIn(r);
+            }
+*/
+        }
+
+        Text {
+            id : ray;
+            text: ""
+            x : chart.width/2
+            y: chart.height/2
         }
 
         // initial animation
-        Component.onCompleted:{
+        Component.onCompleted: {
             initialAnimation.start();
         }
+
         NumberAnimation {
             id: initialAnimation
             running: false
@@ -269,6 +401,11 @@ Column {
                 xAxis.max =_x +4 ;
             if (yAxis.max -4 < _y )
                 yAxis.max = _y + 4 ;
+
+            if (yAxis.min > _y)
+                yAxis.min = _y - 1;
+            if (xAxis.min > _x)
+                xAxis.min = _x - 1;
 
             // add the point
             chart.serieses[_fieldID].append(_x, _y);

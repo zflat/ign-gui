@@ -286,7 +286,7 @@ bool Transport::TopicFound(const std::string &_topic)
   // topic is unsubscribed ... update the model
   if (foundTopic == topics.end())
   {
-    // TODO(Amr) : recreate the topics model
+    // TODO(Amr) : unsubscribe from the topic and remove its UI fields
     return false;
   }
   return true;
@@ -338,9 +338,13 @@ void PlottingInterface::subscribe(QString _topic,
 void PlottingInterface::InitTimer()
 {
   this->timer = new QTimer();
-  this->timer->setInterval(50);
+  this->timer->setInterval(200);
   connect(this->timer, SIGNAL(timeout()), this, SLOT(UpdateGui()));
   this->timer->start();
+
+  auto moveTimer = new QTimer();
+  moveTimer->setInterval(1000);
+  connect(moveTimer, SIGNAL(timeout()), this, SLOT(moveCharts()));
 }
 
 ////////////////////////////////////////////
@@ -368,6 +372,12 @@ void PlottingInterface::UpdateGui()
       }
     }
   }
-
   this->time++;
 }
+
+
+void PlottingInterface::moveCharts()
+{
+    emit moveChart();
+}
+
