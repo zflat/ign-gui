@@ -6,24 +6,23 @@ import QtQuick.Controls.Material 2.1
 import QtQuick.Layouts 1.3
 import "qrc:/qml"
 
-Column
+Rectangle
 {
     id : main
 
     Layout.minimumWidth: 600
     Layout.minimumHeight: 600
     anchors.fill: parent
+    color: (Material.theme == Material.Light) ? Material.color(Material.Grey,Material.Shade100) : "transparent"
 
     property var charts: ({})
     property int mainChartID: 1
 
     property int idIncrementor: 0
-    property int buttonsHeight: 50
 
     property bool multiChartsMode: false
 
-    spacing: 5
-
+    // Horizonal Layout to hold multi charts (small charts)
     Rectangle {
         id: rowCharts
         width: parent.width
@@ -38,20 +37,21 @@ Column
             clip: true
             // Horizontal Layout for the Charts
             Row {
-                objectName: "rrrr"
                 anchors.fill: parent
                 id:rowChartsLayout
                 spacing: 10
             }
         }
     }
+
+    // Vertical Layout to hold Main Charts (1 or 2 charts)
     Column {
         id : chartsLayout
 
         width: parent.width
-        height: parent.height ? parent.height - rowCharts.height : 0
-
-        property int chartMinHeight: 300
+        anchors.topMargin: 10
+        anchors.top: rowCharts.bottom
+        anchors.bottom: parent.bottom
         property int heightFactor: 0
     }
 
@@ -66,7 +66,9 @@ Column
         width: 50
         height: 50
         radius: width/2
-        color: "black"
+        color: (Material.theme == Material.Light) ? Material.color(Material.Grey, Material.Shade700)
+                                                  : Material.accentColor
+
 
         Text {
             text:  "+"
@@ -79,7 +81,7 @@ Column
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            onEntered:{
+            onEntered: {
                 addBtn.opacity = 0.8;
                 cursorShape = Qt.PointingHandCursor;
             }

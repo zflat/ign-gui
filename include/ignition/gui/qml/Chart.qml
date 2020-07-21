@@ -209,7 +209,7 @@ Column {
 
         Rectangle {
             id: hoverLine;
-            visible: true;
+            visible: false;
             width: 2;
             height: chart.plotArea.height;
             x: chart.plotArea.x
