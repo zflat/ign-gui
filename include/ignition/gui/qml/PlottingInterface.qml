@@ -37,8 +37,8 @@ Rectangle
             clip: true
             // Horizontal Layout for the Charts
             Row {
-                anchors.fill: parent
                 id:rowChartsLayout
+                anchors.fill: parent
                 spacing: 10
             }
         }
@@ -173,7 +173,6 @@ Rectangle
     }
     function onClicked(Id)
     {
-//        addBtn.text = Id.toString()
         // if many charts mode & the selected chart is in the horizontal layout
         if (multiChartsMode && charts[Id].multiChartsMode)
         {

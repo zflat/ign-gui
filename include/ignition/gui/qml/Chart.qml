@@ -5,11 +5,11 @@ import QtQuick.Controls.Styles 1.4
 import QtQuick.Controls.Material 2.1
 import QtQuick.Layouts 1.3
 
-Column {
+Rectangle {
     id: main
     property int chartID: -1
     property bool multiChartsMode: false
-
+    color: "transparent"
     signal subscribe(real Id, string topic, string path);
     signal unSubscribe(real Id, string topic, string path);
     signal clicked(real Id);
@@ -192,6 +192,7 @@ Column {
         id : chart
         width: parent.width
         height: parent.height * 0.9
+        anchors.top: infoRect.bottom
 
         // animations
         antialiasing: true
@@ -216,6 +217,7 @@ Column {
             y:chart.plotArea.y
             color: "red"
         }
+
         Component {
             id: seriesText;
             Text {
@@ -232,9 +234,9 @@ Column {
             id:areaView
             anchors.fill:parent
             hoverEnabled: true
-            cursorShape: (multiChartsMode) ? Qt.PointingHandCursor : Qt.ArrowCursor
 
-            property bool flag: true
+            cursorShape: (multiChartsMode) ? Qt.PointingHandCursor : Qt.ArrowCursor
+            property bool flag: (hoverCheckBox.checkState === Qt.Checked) ? true : false
 
             onEntered: {
                 if(flag && ! multiChartsMode)
@@ -266,7 +268,7 @@ Column {
                     for (var key in Object.keys(serieses))
                     {
                         // get the value of the series at the mouse x position
-//                        var point = chart.mapToValue(mouseX, serieses[key]);
+                        // var point = chart.mapToValue(mouseX, serieses[key]);
                         // draw a text at that point to show the value of the series
                         var text = seriesText.createObject(chart, {
                                                                x : mouseX,
@@ -279,57 +281,52 @@ Column {
                 }
             }
 
-
             onClicked: {
                 main.clicked(chartID);
-                chart.scrollRight(chart.width/10);
+                var axisWidth = xAxis.max - xAxis.min;
+                var xPos = xAxis.min + ( (mouseX - chart.plotArea.x) / chart.plotArea.width ) * axisWidth
+                var value = chart.mapToValue(5, lineSeries);
             }
             onDoubleClicked: chart.zoomReset();
 
-            // ======== Under progress ==========
-            property double zoomScale : 1
-            property double prevX: chart.width/2
-            property double prevY: chart.height/2
-            property double prevWidth: chart.width
-            property double prevHeight: chart.height
-/*            onWheel:{
-                // =========== Calculate angle ================
-                var angle = 0.0;
-                var wheelValue = wheel.angleDelta.y;
-                if (wheelValue < 10 && wheelValue > 0)
-                    angle = 0.01 * wheelValue;
-                else if (wheelValue > -10 && wheelValue < 0)
-                    angle = - 0.01 * wheelValue;
-                else if (wheelValue === 120)
-                    angle = 0.1;
-                else if (wheelValue === -120)
-                    angle = -0.1;
+            // ======== Zoom ==========
+            property double shift: 15
+
+            onWheel:{
+                // the center of the plot
+                var centerX = chart.plotArea.x + chart.plotArea.width/2
+                var centerY = chart.plotArea.y + chart.plotArea.height/2
+
+                // the percentage of the mouseX = how it moves far away from the plot center
+                // ex: if the the plot width = 100 & mouseX = 75, so it moves the 50% away from the center (75-50)/50
+                var factorX = (wheel.x - centerX) / (chart.plotArea.width/2); // %
+                // same for y but with mouseY, centerY and Height
+                var factorY = (wheel.y - centerY) / (chart.plotArea.height/2); // %
 
 
-                // =============== Calculate Percentages ===============
-                var percentageX_Width  = Math.abs(wheel.x - chart.width/2) / (chart.width/2);
-                var percentageY_Height = Math.abs(wheel.y - chart.height/2) / (chart.height/2);
+                var zoomType;
+                if( wheel.angleDelta.y > 0)
+                    // zoomIn
+                    zoomType = 1;
+                else
+                    // zoomOut
+                    zoomType = -1;
 
-                console.log(percentageX_Width, wheel.x, chart.width/2, "   PREVX: ",prevX, prevWidth)
 
-                if (wheel.x < prevX)
-                    percentageX_Width *= -1;
-                if (wheel.y < prevY)
-                    percentageY_Height *= -1;
+                // plot size (width & height) will always increase/decrese by 2*shift
+                // (imagine the size is centered with shift distance at both sides of width (same of height) )
 
-                if (zoomScale + angle > 0)
-                    zoomScale += angle;
+                // the location of zooming is determine by changing the x,y (top left corner) of the zoom rect
+                // x,y increase/decrease
+                var rect = Qt.rect(chart.plotArea.x + (factorX + 1) * shift * zoomType,
+                               chart.plotArea.y + (factorY + 1) * shift * zoomType,
+                               chart.plotArea.width  - 2 * shift * zoomType,
+                               chart.plotArea.height - 2 * shift * zoomType
+                               );
 
-                prevX += percentageX_Width * (prevWidth/2);
-                prevY += percentageY_Height * (prevHeight/2);
-                prevWidth = chart.height/zoomScale;
-                prevHeight = chart.width/zoomScale;
-                var r = Qt.rect(prevX-prevWidth/2, prevY - prevHeight/2, prevWidth, prevHeight);
-
-                chart.zoomReset();
-                chart.zoomIn(r);
+                chart.zoomIn(rect);
             }
-*/
+
         }
 
         Text {
@@ -388,6 +385,7 @@ Column {
 
         // to just show the plot at begining
         LineSeries {
+            id: lineSeries
             axisX: xAxis
             axisY: yAxis
             visible: false
@@ -397,18 +395,31 @@ Column {
             console.log("(",_x,",",_y,")");
 
             // expand the chart boundries if needed
-            if (xAxis.max -4 < _x)
-                xAxis.max =_x +4 ;
-            if (yAxis.max -4 < _y )
-                yAxis.max = _y + 4 ;
+            if (xAxis.max  < _x)
+                xAxis.max =_x ;
+            if (yAxis.max  < _y )
+                yAxis.max = _y ;
 
             if (yAxis.min > _y)
-                yAxis.min = _y - 1;
+                yAxis.min = _y ;
             if (xAxis.min > _x)
-                xAxis.min = _x - 1;
+                xAxis.min = _x ;
 
             // add the point
             chart.serieses[_fieldID].append(_x, _y);
         }
     }
+
+    CheckBox {
+        id: hoverCheckBox;
+        visible: (main.multiChartsMode) ? false : true
+        checkState: Qt.Unchecked
+        anchors.right: chart.right
+        anchors.top: chart.top
+        anchors.margins: 20
+        text: "hover"
+    }
+
+//    Behavior on x { NumberAnimation { duration: 100 } }
+//    Behavior on y { NumberAnimation { duration: 100 } }
 }
