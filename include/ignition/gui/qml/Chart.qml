@@ -255,8 +255,37 @@ Rectangle {
                 }
                 hoverLine.visible = false;
             }
+
+            // ========= Hover & Scroll ==========
+            property double xHold: 0
+            property double yHold: 0
+            property double scrollShift : 30
+
+            onPressed: {
+                xHold = mouseX;
+                yHold = mouseY;
+                chart.animationOptions = ChartView.NoAnimation
+            }
+            onReleased: {
+                chart.animationOptions = ChartView.SeriesAnimations
+            }
+
             onPositionChanged: {
-                if (flag) {
+                if (multiChartsMode)
+                    return
+
+                if (pressed)
+                {
+                    // percentage of amount of drag
+                    var xScroll = (mouseX - xHold) / (chart.plotArea.width)
+                    var yScroll = (mouseY - yHold) / (chart.plotArea.height)
+                    console.log(xScroll,yScroll)
+
+                    // if xScroll or yScroll is -ne .. chart will scroll in the oposite direction
+                    chart.scrollLeft(xScroll * scrollShift)
+                    chart.scrollUp(yScroll * scrollShift)
+                }
+                else if (flag) {
                     // move the hover line with the x
                     hoverLine.x = mouseX
 
@@ -288,6 +317,7 @@ Rectangle {
                 var value = chart.mapToValue(5, lineSeries);
             }
             onDoubleClicked: chart.zoomReset();
+
 
             // ======== Zoom ==========
             property double shift: 15
