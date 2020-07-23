@@ -1,8 +1,8 @@
-ign_gui_add_plugin(GuiPlotting
+ign_gui_add_plugin(TransportPlotting
   SOURCES
-    GuiPlotting.cc
+    TransportPlotting.cc
   QT_HEADERS
-    GuiPlotting.hh
+    TransportPlotting.hh
   TEST_SOURCES
   PUBLIC_LINK_LIBS
     # ${}

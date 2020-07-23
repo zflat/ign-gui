@@ -63,20 +63,20 @@ TEST(PlottingInterfaceTest, Topic)
             fields["pose-position-x"]->Charts().end());
 
     // test the removing of the field if it has not attatched charts
-    topic.UnRegister("pose-position-y",1);
+    topic.UnRegister("pose-position-y", 1);
     EXPECT_EQ(topic.FieldCount(), 1);
 
 
     // =========== Callback Test ============
-    topic.Register("pose-position-z",1);
+    topic.Register("pose-position-z", 1);
 
     // update the fields
     topic.Callback(msg);
 
     fields = topic.Fields();
 
-    EXPECT_EQ(int(fields["pose-position-x"]->Value()), 10);
-    EXPECT_EQ(int(fields["pose-position-z"]->Value()), 15);
+    EXPECT_EQ(static_cast<int>(fields["pose-position-x"]->Value()), 10);
+    EXPECT_EQ(static_cast<int>(fields["pose-position-z"]->Value()), 15);
 }
 
 TEST(PlottingInterfaceTest, Transport)
@@ -112,8 +112,8 @@ TEST(PlottingInterfaceTest, Transport)
 
     auto fields = topics["/collision_topic"]->Fields();
 
-    EXPECT_EQ(int(fields["pose-position-x"]->Value()), 10);
-    EXPECT_EQ(int(fields["pose-position-z"]->Value()), 15);
+    EXPECT_EQ(static_cast<int>(fields["pose-position-x"]->Value()), 10);
+    EXPECT_EQ(static_cast<int>(fields["pose-position-z"]->Value()), 15);
 
 
     // =========== Many Topics Test =================
@@ -123,7 +123,7 @@ TEST(PlottingInterfaceTest, Transport)
 
     topics = transport.Topics();
 
-    ASSERT_EQ(int(topics.size()), 2);
+    ASSERT_EQ(static_cast<int>(topics.size()), 2);
     EXPECT_EQ(topics["/test_topic"]->FieldCount(), 1);
 
 
@@ -134,35 +134,27 @@ TEST(PlottingInterfaceTest, Transport)
     transport.Unsubscribe("/collision_topic", "pose-position-x", 1);
 
     topics = transport.Topics();
-    EXPECT_EQ(int(topics.size()), 1);
+    EXPECT_EQ(static_cast<int>(topics.size()), 1);
 }
 
-//class PlotTest : public QObject
-//{
-//    Q_OBJECT
-//    public: PlotTest(): QObject() {}
-//    public slots: void plot(int _chart, QString _fieldID, double _x, double _y)
+TEST(PlottingInterfaceTest, PlottingIface)
+{
+//    auto PlotIface = new PlottingInterface();
+//    QObject::connect(PlotIface, &PlottingInterface::plot,
+//                     [=](int _chart, QString _fieldID, double _x, double _y)
 //    {
 //        EXPECT_EQ(_chart, 1);
 //        EXPECT_EQ(_fieldID, "data");
-//        EXPECT_GE(int(_x), 1);
-//        EXPECT_EQ(int(_y), 10);
-//    }
-//};
-
-//TEST(PlottingInterfaceTest, PlottingIface)
-//{
-//    auto PlottingIface = new PlottingInterface();
-//    auto plotTest = new PlotTest();
-//    QObject::connect(PlottingIface, SIGNAL(plot()), plotTest, SLOT(plot()));
+//        EXPECT_GE(_y - 10, 0.1);
+//        EXPECT_GE(_x, 0);
+//    });
 
 //    transport::Node node;
 
-//    auto pub = node.Advertise<msgs::Collision> ("/collision_topic");
+//    auto pub = node.Advertise<msgs::Int32> ("/test");
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-//    PlottingIface->subscribe("/test_plotting_iface","data",1);
-
+//    PlotIface->subscribe("/test", "data", 1);
 //    ignition::msgs::Int32 msg;
 //    msg.set_data(10);
 
@@ -170,7 +162,4 @@ TEST(PlottingInterfaceTest, Transport)
 
 //    // wait for callback
 //    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-//    delete plotTest;
-//    delete PlottingIface;
-//}
+}

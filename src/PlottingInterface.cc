@@ -28,6 +28,12 @@ class PlottingIfacePrivate
 {
   /// \brief responsible for transport messages and topics
   public: Transport* transport;
+
+  /// \brief current plotting time
+  float time;
+
+  /// \brief timer to update the plotting each time step
+  QTimer* timer;
 };
 
 class TransportPrivate
@@ -51,13 +57,13 @@ Field::Field()
 }
 
 //////////////////////////////////////////////////////
-void Field::SetValue(double _value)
+void Field::SetValue(const double _value)
 {
   this->value = _value;
 }
 
 //////////////////////////////////////////////////////
-double Field::Value()
+double Field::Value() const
 {
   return this->value;
 }
@@ -321,7 +327,7 @@ void PlottingInterface::unsubscribe(QString _topic,
 //////////////////////////////////////////////////////
 void PlottingInterface::setSimTime(double _timeout)
 {
-  this->timer->setInterval(_timeout);
+  this->dataPtr->timer->setInterval(_timeout);
 }
 
 //////////////////////////////////////////////////////
@@ -337,10 +343,10 @@ void PlottingInterface::subscribe(QString _topic,
 ////////////////////////////////////////////
 void PlottingInterface::InitTimer()
 {
-  this->timer = new QTimer();
-  this->timer->setInterval(200);
-  connect(this->timer, SIGNAL(timeout()), this, SLOT(UpdateGui()));
-  this->timer->start();
+  this->dataPtr->timer = new QTimer();
+  this->dataPtr->timer->setInterval(350);
+  connect(this->dataPtr->timer, SIGNAL(timeout()), this, SLOT(UpdateGui()));
+  this->dataPtr->timer->start();
 
   auto moveTimer = new QTimer();
   moveTimer->setInterval(1000);
@@ -365,14 +371,14 @@ void PlottingInterface::UpdateGui()
       {
         QString fieldFullPath = QString::fromStdString(
         topic.first + "-" + field.first);
-        double x = this->time;
+        double x = this->dataPtr->time;
         double y = field.second->Value();
 
         emit plot(chart, fieldFullPath, x, y);
       }
     }
   }
-  this->time++;
+  this->dataPtr->time++;
 }
 
 

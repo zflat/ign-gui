@@ -21,16 +21,19 @@
 #include <QTimer>
 #include <QString>
 #include <QVariant>
-#include <bits/stdc++.h>
+
 #include <google/protobuf/message.h>
 #include <google/protobuf/descriptor.h>
-#include <ignition/transport/Node.hh>
-#include <ignition/transport/MessageInfo.hh>
-#include <ignition/transport/Publisher.hh>
+
 #include <map>
 #include <set>
 #include <string>
 #include <memory>
+
+#include <ignition/transport/Node.hh>
+#include <ignition/transport/MessageInfo.hh>
+#include <ignition/transport/Publisher.hh>
+
 
 namespace ignition
 {
@@ -38,43 +41,41 @@ namespace gui
 {
 class Field
 {
-  /// \brief value of that field
-  private: double value;
-
-  /// \brief Registered Charts to that field
-  private: std::set<int> charts;
-
   /// \brief Constructor
   public: Field();
 
+  /// \brief Set the field Value
   /// \param[in] _value the set value
-  public: void SetValue(double _value);
+  public: void SetValue(const double _value);
 
+  /// \brief Get the field value
   /// \return value of the field
-  public: double Value();
+  public: double Value() const;
 
   /// \brief Register a chart that plot that field
+  /// \param[in] _chart chart ID to be registered
   public: void AddChart(int _chart);
 
   /// \brief UnRegister a chart from plotting that field
-  /// \return the count of registered charts
   public: void RemoveChart(int _chart);
 
   /// \brief size of registered charts
   /// \return charts size
   public: int ChartCount();
 
+  /// \brief Get all registered charts to that field
+  /// \return set of registered charts
   public: std::set<int> &Charts();
+
+  /// \brief value of that field
+  private: double value;
+
+  /// \brief Registered Charts to that field
+  private: std::set<int> charts;
 };
 
 class Topic
 {
-  /// \brief topic name
-  private: std::string name;
-
-  /// \brief Plotting fields to update its values
-  private: std::map<std::string, Field*> fields;
-
   /// \brief Constructor
   public: explicit Topic(std::string _name);
 
@@ -102,6 +103,12 @@ class Topic
   /// \brief check the plotable types and get data from reflection
   private: double PlotData(const google::protobuf::Message &_msg,
                            const google::protobuf::FieldDescriptor *field);
+
+  /// \brief topic name
+  private: std::string name;
+
+  /// \brief Plotting fields to update its values
+  private: std::map<std::string, Field*> fields;
 };
 
 class TransportPrivate;
@@ -145,18 +152,13 @@ class Transport
 
 class PlottingIfacePrivate;
 
+/// \brief Plotting Interface
+/// Responsible for plotting transport msgs-fields
+/// Used by TransportPlotting Plugin & GazeboPlotting Plugin
+/// Accepts dragged items from TopicViewer Plugin & ComponentInspector Plugin
 class PlottingInterface : public QObject
 {
   Q_OBJECT
-
-  /// \brief current plotting time
-  float time;
-
-  /// \brief timer to update the plotting each time step
-  QTimer* timer;
-
-  /// \brief configration of the timer
-  void InitTimer();
 
   /// \brief update the plotting each timeout of the timer
   public slots: void UpdateGui();
@@ -182,7 +184,6 @@ class PlottingInterface : public QObject
   public slots: void unsubscribe(QString _topic,
                                  QString _fieldPath,
                                  int _chart);
-  public slots: void moveCharts();
 
   /// \brief set the plotting time
   /// \param[in] _timeout the timeout to update the plot
@@ -195,9 +196,17 @@ class PlottingInterface : public QObject
   /// \param[in] _y y coordinates of the plot point
   signals: void plot(int _chart, QString _fieldID, double _x, double _y);
 
+  /// \brief signal to move the chart aka scroll it to the right
   signals: void moveChart();
 
+  /// \brief slot to to lestin to a timer to emit moveChart signal
+  public slots: void moveCharts();
+
+  /// \brief Private data member.
   private: std::unique_ptr<PlottingIfacePrivate> dataPtr;
+
+  /// \brief configration of the timer
+  private: void InitTimer();
 };
 
 }
