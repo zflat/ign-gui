@@ -163,6 +163,8 @@ Rectangle
         // Signals and Slots
         chartObject.subscribe.connect(main.onSubscribe);
         chartObject.unSubscribe.connect(main.onUnSubscribe);
+        chartObject.componentSubscribe.connect(main.onComponentSubscribe);
+        chartObject.componentUnSubscribe.connect(main.onComponentUnSubscribe);
         chartObject.clicked.connect(main.onClicked);
     }
 
@@ -186,6 +188,14 @@ Rectangle
     function onUnSubscribe(Id, topic, path)
     {
         PlottingIface.unsubscribe(topic, path, Id);
+    }
+    function onComponentSubscribe(entity, typeId, type, attribute, Id)
+    {
+        PlottingIface.onComponentSubscribe(entity, typeId, type, attribute, Id);
+    }
+    function onComponentUnSubscribe(entity, typeId, attribute, Id)
+    {
+        PlottingIface.onComponentUnSubscribe(entity, typeId, attribute, Id);
     }
     function onClicked(Id)
     {

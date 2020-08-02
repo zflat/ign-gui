@@ -185,9 +185,13 @@ class PlottingInterface : public QObject
                                  QString _fieldPath,
                                  int _chart);
 
-  /// \brief set the plotting time
-  /// \param[in] _timeout the timeout to update the plot
-  public: Q_INVOKABLE void setSimTime(double _timeout);
+  /// \brief Get the timeout of updating the plot
+  /// \return updating plot timeout
+  public: int Timeout();
+
+  /// \brief Get the Plotting Time
+  /// \return Plotting Time
+  public: float Time();
 
   /// \brief plot a point to a chart
   /// \param[in] _chart chart ID
@@ -198,6 +202,52 @@ class PlottingInterface : public QObject
 
   /// \brief signal to move the chart aka scroll it to the right
   signals: void moveChart();
+
+  /// \brief called by Qml to register a chart to a component attribute
+  /// \param[in] _entity entity id which has the component
+  /// \param[in] _typeId component type id
+  /// \param[in] _type component data type
+  /// \param[in] _attribute component specefice attribte
+  /// \param[in] _chart chart id
+  public slots: void onComponentSubscribe(QString _entity,
+                                          QString _typeId,
+                                          QString _type,
+                                          QString _attribute,
+                                          int _chart);
+
+  /// \brief called by Qml to remove a chart from a component attribute
+  /// \param[in] _entity entity id which has the component
+  /// \param[in] _typeId component type id
+  /// \param[in] _type component data type
+  /// \param[in] _attribute component specefice attribte
+  /// \param[in] _chart chart id
+  public slots: void onComponentUnSubscribe(QString _entity,
+                                            QString _typeId,
+                                            QString _attribute,
+                                            int _chart);
+
+  /// \brief Notify the gazebo plugin to subscribe to a component data
+  /// \param[in] _entity entity id which has the component
+  /// \param[in] _typeId component type id
+  /// \param[in] _type component data type
+  /// \param[in] _attribute component specefice attribte
+  /// \param[in] _chart chart id
+  signals: void ComponentSubscribe(uint64_t _entity,
+                                   uint64_t _typeId,
+                                   std::string _type,
+                                   std::string _attribute,
+                                   int _chart);
+
+  /// \brief Notify the gazebo plugin to unsubscribe a component data
+  /// \param[in] _entity entity id which has the component
+  /// \param[in] _typeId component type id
+  /// \param[in] _type component data type
+  /// \param[in] _attribute component specefice attribte
+  /// \param[in] _chart chart id
+  signals: void ComponentUnSubscribe(uint64_t _entity,
+                                     uint64_t _typeId,
+                                     std::string _attribute,
+                                     int _chart);
 
   /// \brief slot to to lestin to a timer to emit moveChart signal
   public slots: void moveCharts();

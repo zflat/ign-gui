@@ -28,6 +28,8 @@ Rectangle {
     color: "transparent"
     signal subscribe(real Id, string topic, string path);
     signal unSubscribe(real Id, string topic, string path);
+    signal componentSubscribe(string entity, string typeId, string type, string attribute, real Id);
+    signal componentUnSubscribe(string entity, string typeId, string attribute, real Id);
     signal clicked(real Id);
 
     function appendPoint(_fieldID, _x, _y)
@@ -75,25 +77,45 @@ Rectangle {
                     return;
                 }
 
-                var topic_path = drop.text.split(",");
-                var topic = topic_path[0];
-                var path = topic_path[1];
+                if (infoRect.isComponentDrop(drop.text))
+                {
+                    var textList = drop.text.split(",");
+                    var entity = textList[1];
+                    var typeId = textList[2];
+                    var type = textList[3];
+                    var attribute = textList[4];
 
-                // Field Full Path ID
-                var ID = topic + "-" + path;
+                    var componentID = entity + "," + typeId + "," + attribute;
+                    // if the field is already attached
+                    if (componentID in chart.serieses)
+                        return;
 
-                // if the field is already attached
-                if (ID in chart.serieses)
-                    return;
+                    chart.addSeries(componentID);
+                    infoRect.addComponent(entity, typeId, type, attribute);
+                    componentSubscribe(entity, typeId, type, attribute, chartID);
+                }
+                else
+                {
+                    var topic_path = drop.text.split(",");
+                    var topic = topic_path[0];
+                    var path = topic_path[1];
 
-                // add axis series to plot the field
-                chart.addSeries(ID);
+                    // Field Full Path ID
+                    var ID = topic + "-" + path;
 
-                // add field info component
-                infoRect.addField(ID, topic, path);
+                    // if the field is already attached
+                    if (ID in chart.serieses)
+                        return;
 
-                // attach the chart to the subscribed field
-                subscribe(chartID, topic, path);
+                    // add axis series to plot the field
+                    chart.addSeries(ID);
+
+                    // add field info component
+                    infoRect.addField(ID, topic, path);
+
+                    // attach the chart to the subscribed field
+                    subscribe(chartID, topic, path);
+                }
             }
         }
 
@@ -115,18 +137,61 @@ Rectangle {
             // update field data
             field.topic = topic;
             field.path = path;
-       }
+            field.type = "Field"
+        }
+        function addComponent(entity, typeId, type, attribute)
+        {
+            var _component = fieldInfo.createObject(row);
+            _component.width = 150;
+            _component.height = Qt.binding( function() {return infoRect.height * 0.8} );
+            _component.y = Qt.binding( function()
+            {
+                if (infoRect.height)
+                    return (infoRect.height - _component.height)/2;
+                else
+                    return 0;
+            }
+            );
+
+            _component.entity = entity;
+            _component.typeId = typeId;
+            _component.componentType = type;
+            _component.attribute = attribute;
+
+            _component.type = "Component";
+        }
+
+        function isComponentDrop(dropText)
+        {
+            var textList = dropText.split(",");
+            if (textList.length < 5)
+                return false;
+            if (textList[0] !== "Component")
+                return false;
+
+            return true;
+        }
     }
 
-    // ================ Field Component ====================
+    // ================ Field / Component ====================
     Component {
         id: fieldInfo
         Rectangle {
             id: component
-            radius: width/4
+
+            // Field or Component
+            property string type: ""
+
             property string topic: ""
             property string path: ""
 
+            property string entity: ""
+            property string typeId: ""
+            property string componentType: ""
+            property string attribute: ""
+            property string componentId: entity + "," + typeId + "," + attribute;
+
+            radius: width/4
             Rectangle {
                 height: parent.height
                 width: parent.width
@@ -144,8 +209,9 @@ Rectangle {
 
                 Text {
                     id: fieldname
-//                    anchors.centerIn: parent
-                    text: component.topic + "/"+ component.path
+                    text: (component.type === "Field") ? component.topic + "/"+ component.path :
+                          (component.type === "Component") ? component.entity + "," + component.typeId.toString()
+                                                             + "," + component.attribute : ""
                     color: "white"
                     elide: Text.ElideRight
                     width: parent.width * 0.9
@@ -156,7 +222,11 @@ Rectangle {
                     id: tool_tip
                     delay: 1000
                     timeout: 2000
-                    text: component.topic + "-"+ component.path;
+                    text: (component.type === "Field" ) ? component.topic + "-"+ component.path :
+                          (component.type === "Component") ? "entity:" + component.entity + "\n" +
+                                                             "typeId:" + component.typeId + "\n" +
+                                                             component.componentType + " " +
+                                                             component.attribute : ""
                     visible: fieldInfoMouse.containsMouse
                     y: fieldInfoMouse.mouseY
                     x: fieldInfoMouse.mouseX
@@ -174,8 +244,8 @@ Rectangle {
             Rectangle {
                 id: exitBtn
                 radius: width / 2
-                height: parent.height * 0.4;
-                width: parent.width * 0.2
+                height: parent.height * 0.6;
+                width: height * 1.2
                 color: "red"
                 opacity: 0
                 anchors.right: parent.right
@@ -187,10 +257,24 @@ Rectangle {
                     anchors.fill: parent
                     onClicked: {
                         exitAnimation.start();
-                        // unSubscribe from the transport
-                        main.unSubscribe(main.chartID, component.topic, component.path);
+
+                        // unSubscribe from the transport / Component
+                        if (component.type === "Field")
+                            main.unSubscribe(main.chartID, component.topic, component.path);
+
+                        else if (component.type === "Component")
+                            main.componentUnSubscribe(component.entity, component.typeId,
+                                                      component.attribute, main.chartID)
+
+
                         // delete the series points and deattache it from the chart
-                        chart.deleteSeries(component.topic + "-"+ component.path)
+                        if (component.type === "Field")
+                            chart.deleteSeries(component.topic + "-"+ component.path)
+
+                        else if (component.type === "Component")
+                            chart.deleteSeries(component.componentId);
+
+
                         // delete the field info component
                         component.destroy();
                     }
@@ -227,7 +311,7 @@ Rectangle {
 
         property var serieses: ({})
         property var textSerieses: ({})
-        property var colors: ["red","blue","cyan","yellow","green","lightGray"]
+        property var colors: ["red","blue", "darkorange", "cyan", "dodgerblue", "hotpink", "lawngreen", "yellow"]
         property int indexColor: 0
 
         Rectangle {
@@ -345,6 +429,9 @@ Rectangle {
             property double shift: 15
 
             onWheel:{
+                if (multiChartsMode)
+                    return
+
                 // the center of the plot
                 var centerX = chart.plotArea.x + chart.plotArea.width/2
                 var centerY = chart.plotArea.y + chart.plotArea.height/2

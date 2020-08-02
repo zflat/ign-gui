@@ -325,15 +325,52 @@ void PlottingInterface::unsubscribe(QString _topic,
 }
 
 //////////////////////////////////////////////////////
-void PlottingInterface::setSimTime(double _timeout)
+int PlottingInterface::Timeout()
 {
-  this->dataPtr->timer->setInterval(_timeout);
+  return this->dataPtr->timer->interval();
+}
+
+//////////////////////////////////////////////////////
+float PlottingInterface::Time()
+{
+  return this->dataPtr->time;
+}
+
+//////////////////////////////////////////////////////
+void PlottingInterface::onComponentSubscribe(QString _entity, QString _typeId,
+                                             QString _type, QString _attribute,
+                                             int _chart)
+{
+  // convert the strings into
+  uint64_t entity, typeId;
+  std::istringstream issEntity(_entity.toStdString());
+  issEntity >> entity;
+  std::istringstream issTypeId(_typeId.toStdString());
+  issTypeId >> typeId;
+
+  emit this->ComponentSubscribe(entity, typeId, _type.toStdString(),
+                                _attribute.toStdString(), _chart);
+}
+
+//////////////////////////////////////////////////////
+void PlottingInterface::onComponentUnSubscribe(QString _entity, QString _typeId,
+                                               QString _attribute, int _chart)
+{
+  // convert the strings into
+  uint64_t entity, typeId;
+  std::istringstream issEntity(_entity.toStdString());
+  issEntity >> entity;
+  std::istringstream issTypeId(_typeId.toStdString());
+  issTypeId >> typeId;
+
+  emit this->ComponentUnSubscribe(entity, typeId,
+                                  _attribute.toStdString(), _chart);
 }
 
 //////////////////////////////////////////////////////
 void PlottingInterface::subscribe(QString _topic,
-                                    QString _fieldPath,
-                                    int _chart)
+                                  QString _fieldPath,
+                                  int _chart)
 {
   this->dataPtr->transport->Subscribe(_topic.toStdString(),
                                       _fieldPath.toStdString(),
@@ -381,9 +418,9 @@ void PlottingInterface::UpdateGui()
   this->dataPtr->time++;
 }
 
-
+//////////////////////////////////////////////////////
 void PlottingInterface::moveCharts()
 {
-    emit moveChart();
+  emit moveChart();
 }
 
