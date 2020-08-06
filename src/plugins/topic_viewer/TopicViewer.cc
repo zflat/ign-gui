@@ -14,8 +14,13 @@
  * limitations under the License.
  *
 */
-#include <ignition/plugin/Register.hh>
 
+#include <QModelIndex>
+#include <QStandardItem>
+#include <QString>
+
+#include <ignition/common/Console.hh>
+#include <ignition/plugin/Register.hh>
 #include "TopicViewer.hh"
 
 #define NAME_KEY "name"
@@ -36,6 +41,9 @@ namespace gui
 {
 namespace plugins
 {
+  /// \brief Model for the Topics and their Msgs and Fields
+  /// a tree model that represents the topics tree with its Msgs
+  /// Childeren and each msg node has its own fileds/msgs childeren
   class TopicsModel : public QStandardItemModel
   {
     /// \brief roles and names of the model
@@ -64,6 +72,64 @@ namespace plugins
 
     /// \brief topic: msgType map to keep track of the model current topics
     public: std::map<std::string, std::string> currentTopics;
+
+    /// \brief Create the fields model
+    public: void CreateModel();
+
+    /// \brief add a topic to the model
+    /// \param[in] _topic topic name to be displayed
+    /// \param[in] _msg topic's msg type
+    public: void AddTopic(const std::string &_topic,
+                         const std::string &_msg);
+
+    /// \brief add a field/msg child to that parent item
+    /// \param[in] _parentItem a parent for the added field/msg
+    /// \param[in] _msgName the displayed name of the field/msg
+    /// \param[in] _msgType field/msg type
+    public: void AddField(QStandardItem *_parentItem,
+                       const std::string &_msgName,
+                       const std::string &_msgType);
+
+    /// \brief factory method for creating an item
+    /// \param[in] _name the display name
+    /// \param[in] _type type of the field of the item
+    /// \param[in] _path a set of concatenate strings of parent msgs
+    /// names that lead to that field, starting from the most parent
+    /// ex : if we have [Collision]msg contains [pose]msg contains [position]
+    /// msg contains [x,y,z] fields, so the path of x = "pose-position-x"
+    /// \param[in] _topic the name of the most parent item
+    /// \return the created Item
+    public: QStandardItem *FactoryItem(const std::string &_name,
+                                      const std::string &_type,
+                                      const std::string &_path = "",
+                                      const std::string &_topic = "");
+
+    /// \brief set the topic role name of the item with the most
+    /// topic parent of that field item
+    /// \param[in] _item item ref to set its topic
+    public: void SetItemTopic(QStandardItem *_item);
+
+    /// \brief set the path/ID of the givin item starting from
+    /// the most topic parent to the field itself
+    /// \param[in] _item item ref to set its path
+    public: void SetItemPath(QStandardItem *_item);
+
+    /// \brief get the topic name of selected item
+    /// \param[in] _item ref to the item to get its parent topic
+    public: std::string TopicName(const QStandardItem *_item) const;
+
+    /// \brief full path starting from topic name till the msg name
+    /// \param[in] _index index of the QStanadardItem
+    /// \return string with all elements separated by '/'
+    public: std::string ItemPath(const QStandardItem *_item) const;
+
+    /// \brief check if the type is supported in the plotting types
+    /// \param[in] _type the msg type to check if it is supported
+    public: bool IsPlotable(
+            const google::protobuf::FieldDescriptor::Type &_type);
+
+    /// \brief supported types for plotting
+    public: std::vector<google::protobuf::FieldDescriptor::Type> plotableTypes;
   };
 }
 }
@@ -76,15 +142,15 @@ using namespace plugins;
 TopicViewer::TopicViewer() : Plugin(), dataPtr(new TopicViewerPrivate)
 {
   using namespace google::protobuf;
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_DOUBLE);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_FLOAT);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_INT32);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_INT64);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT32);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT64);
-  this->plotableTypes.push_back(FieldDescriptor::Type::TYPE_BOOL);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_DOUBLE);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_FLOAT);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_INT32);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_INT64);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT32);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_UINT64);
+  this->dataPtr->plotableTypes.push_back(FieldDescriptor::Type::TYPE_BOOL);
 
-  this->CreateModel();
+  this->dataPtr->CreateModel();
 
   ignition::gui::App()->Engine()->rootContext()->setContextProperty(
                 "TopicsModel", this->dataPtr->model);
@@ -107,45 +173,45 @@ void TopicViewer::LoadConfig(const tinyxml2::XMLElement *)
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::CreateModel()
+QStandardItemModel *TopicViewer::Model()
 {
-  this->dataPtr->model = new TopicsModel();
+  return reinterpret_cast<QStandardItemModel *>(this->dataPtr->model);
+}
+
+//////////////////////////////////////////////////
+void TopicViewerPrivate::CreateModel()
+{
+  this->model = new TopicsModel();
 
   std::vector<std::string> topics;
-  this->dataPtr->node.TopicList(topics);
+  this->node.TopicList(topics);
 
   for (unsigned int i = 0; i < topics.size(); ++i)
   {
     std::vector<ignition::transport::MessagePublisher> infoMsgs;
-    this->dataPtr->node.TopicInfo(topics[i], infoMsgs);
+    this->node.TopicInfo(topics[i], infoMsgs);
     std::string msgType = infoMsgs[0].MsgTypeName();
     this->AddTopic(topics[i], msgType);
   }
 }
 
 //////////////////////////////////////////////////
-QStandardItemModel *TopicViewer::Model()
-{
-    return reinterpret_cast<QStandardItemModel *>(this->dataPtr->model);
-}
-
-//////////////////////////////////////////////////
-void TopicViewer::AddTopic(const std::string &_topic,
+void TopicViewerPrivate::AddTopic(const std::string &_topic,
                            const std::string &_msg)
 {
   QStandardItem *topicItem = this->FactoryItem(_topic, _msg);
   topicItem->setWhatsThis("Topic");
-  QStandardItem *parent = this->dataPtr->model->invisibleRootItem();
+  QStandardItem *parent = this->model->invisibleRootItem();
   parent->appendRow(topicItem);
 
   this->AddField(topicItem , _msg, _msg);
 
   // store the topics to keep track of them
-  this->dataPtr->currentTopics[_topic] = _msg;
+  this->currentTopics[_topic] = _msg;
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::AddField(QStandardItem *_parentItem,
+void TopicViewerPrivate::AddField(QStandardItem *_parentItem,
                            const std::string &_msgName,
                            const std::string &_msgType)
 {
@@ -166,7 +232,10 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
 
   auto msg = ignition::msgs::Factory::New(_msgType);
   if (!msg)
+  {
+      ignwarn << "Null Msg: " << _msgType << std::endl;
       return;
+  }
 
   auto msgDescriptor = msg->GetDescriptor();
   if (!msgDescriptor)
@@ -180,12 +249,12 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
     auto msgField = msgDescriptor->field(i);
 
     if (msgField->is_repeated())
-        continue;
+      continue;
 
     auto messageType = msgField->message_type();
 
     if (messageType)
-      AddField(msgItem, msgField->name(), messageType->name());
+      this->AddField(msgItem, msgField->name(), messageType->name());
 
     else
     {
@@ -198,16 +267,16 @@ void TopicViewer::AddField(QStandardItem *_parentItem,
 
       // to make the plottable items draggable
       if (this->IsPlotable(msgField->type()))
-          msgFieldItem->setData(QVariant(true), PLOT_ROLE);
+        msgFieldItem->setData(QVariant(true), PLOT_ROLE);
     }
   }
 }
 
 //////////////////////////////////////////////////
-QStandardItem *TopicViewer::FactoryItem(const std::string &_name,
-                                        const std::string &_type,
-                                        const std::string &_path,
-                                        const std::string &_topic)
+QStandardItem *TopicViewerPrivate::FactoryItem(const std::string &_name,
+                                               const std::string &_type,
+                                               const std::string &_path,
+                                               const std::string &_topic)
 {
   QString name = QString::fromStdString(_name);
   QString type = QString::fromStdString(_type);
@@ -226,7 +295,7 @@ QStandardItem *TopicViewer::FactoryItem(const std::string &_name,
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::SetItemTopic(QStandardItem *_item)
+void TopicViewerPrivate::SetItemTopic(QStandardItem *_item)
 {
   std::string topic = this->TopicName(_item);
   QVariant Topic(QString::fromStdString(topic));
@@ -234,7 +303,7 @@ void TopicViewer::SetItemTopic(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-void TopicViewer::SetItemPath(QStandardItem *_item)
+void TopicViewerPrivate::SetItemPath(QStandardItem *_item)
 {
   std::string path = this->ItemPath(_item);
   QVariant Path(QString::fromStdString(path));
@@ -242,7 +311,7 @@ void TopicViewer::SetItemPath(QStandardItem *_item)
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::TopicName(const QStandardItem *_item) const
+std::string TopicViewerPrivate::TopicName(const QStandardItem *_item) const
 {
   QStandardItem *parent = _item->parent();
 
@@ -257,7 +326,7 @@ std::string TopicViewer::TopicName(const QStandardItem *_item) const
 }
 
 //////////////////////////////////////////////////
-std::string TopicViewer::ItemPath(const QStandardItem *_item) const
+std::string TopicViewerPrivate::ItemPath(const QStandardItem *_item) const
 {
   std::deque<std::string> path;
   while (_item)
@@ -282,11 +351,11 @@ std::string TopicViewer::ItemPath(const QStandardItem *_item) const
 }
 
 /////////////////////////////////////////////////
-bool TopicViewer::IsPlotable(
+bool TopicViewerPrivate::IsPlotable(
     const google::protobuf::FieldDescriptor::Type &_type)
 {
   return std::find(this->plotableTypes.begin(), this->plotableTypes.end(),
-                     _type) != this->plotableTypes.end();
+                   _type) != this->plotableTypes.end();
 }
 
 /////////////////////////////////////////////////
@@ -317,7 +386,7 @@ void TopicViewer::UpdateModel()
     }
 
     // new topic
-    this->AddTopic(topics[i], msgType);
+    this->dataPtr->AddTopic(topics[i], msgType);
   }
 
   // remove the topics that don't exist in the network

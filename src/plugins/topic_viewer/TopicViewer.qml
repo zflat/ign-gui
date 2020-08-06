@@ -141,7 +141,7 @@ TreeView {
                 // this is useful to enable navigating with keyboard from the right position
                 item.forceActiveFocus();
 
-                tree.expandCollapseMsg();
+                tree.expandCollapseMsg(tree.currentIndex);
             }
         }
 
@@ -164,12 +164,14 @@ TreeView {
             font.pointSize: 12
             anchors.leftMargin: 5
             anchors.left: icon.right
+            anchors.right: parent.right
+            elide: Text.ElideMiddle
             y: icon.y
         }
 
         ToolTip {
             id: tool_tip
-            delay: 1000
+            delay: 200
             timeout: 2000
             text: (model === null) ? "Type ?" : "Type: " + model.type;
             visible: dragMouse.containsMouse
@@ -180,18 +182,55 @@ TreeView {
         }
     }
 
-    function expandCollapseMsg(){
-        if (tree.isExpanded(currentIndex))
-            tree.collapse(currentIndex)
+    property int y_pos: 0
+
+    style: TreeViewStyle {
+        branchDelegate: Rectangle {
+          height: itemHeight
+          width: itemHeight
+          color: "transparent"
+          Image {
+            id: branchImage
+            fillMode: Image.Pad
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            sourceSize.height: itemHeight * 0.4
+            sourceSize.width: itemHeight * 0.4
+            source: styleData.isExpanded ? "minus.png" : "plus.png"
+          }
+          MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            propagateComposedEvents: true
+            onClicked: {
+              mouse.accepted = true
+
+              // set the current index & current selection and active focus for keyboard
+              // the reason for that to make the branch selection just like the item selection
+              // and to fix the animation as it ueses item selection's info
+              tree.selection.select(styleData.index,ItemSelectionModel.ClearAndSelect)
+              tree.selection.setCurrentIndex(styleData.index,ItemSelectionModel.ClearAndSelect)
+              tree.__currentRow = styleData.row
+              item.forceActiveFocus();
+
+              expandCollapseMsg(styleData.index);
+            }
+          }
+        }
+    }
+
+    function expandCollapseMsg(index){
+        if (tree.isExpanded(index))
+            tree.collapse(index)
         else
-            tree.expand(tree.currentIndex);
+            tree.expand(index);
     }
 
     Transition {
         id: expandTransition
         NumberAnimation {
             property: "y";
-            from: tree.__listView.currentItem.y;
+            from: (tree.__listView.currentItem) ? tree.__listView.currentItem.y : 0;
             duration: 200;
             easing.type: Easing.OutQuad
         }
@@ -199,9 +238,12 @@ TreeView {
 
     Transition {
         id: displacedTransition
-        NumberAnimation { property: "y"; duration: 200; easing.type: Easing.OutQuad; }
+        NumberAnimation {
+            property: "y";
+            duration: 200;
+            easing.type: Easing.OutQuad;
+        }
     }
-
 
     Component.onCompleted: {
         tree.__listView.add = expandTransition;

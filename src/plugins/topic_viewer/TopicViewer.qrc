@@ -2,5 +2,7 @@
 <qresource prefix="TopicViewer/">
   <file>TopicViewer.qml</file>
   <file>plottable_icon.svg</file>
+  <file>minus.png</file>
+  <file>plus.png</file>
 </qresource>
 </RCC>

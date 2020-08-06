@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 
 #include <ignition/common/Console.hh>
-#include "test_config.h"
+#include "test_config.h"  // NOLINT(build/include)
 #include "ignition/gui/Application.hh"
 #include "ignition/gui/Plugin.hh"
 #include "ignition/gui/MainWindow.hh"
@@ -37,6 +37,8 @@ using namespace ignition;
 using namespace gui;
 using namespace plugins;
 
+// See https://github.com/ignitionrobotics/ign-gui/issues/75
+#if not defined(__APPLE__) && not defined(_WIN32)
 /////////////////////////////////////////////////
 TEST(TopicViewerTest, Load)
 {
@@ -62,6 +64,7 @@ TEST(TopicViewerTest, Load)
     plugins.clear();
 }
 
+/////////////////////////////////////////////////
 TEST(TopicViewerTest, Model)
 {
     setenv("IGN_PARTITION", "ign-gazebo-test", 1);
@@ -176,7 +179,7 @@ TEST(TopicViewerTest, Model)
     // =========== Dynamic Adding / Removing =============
 
     // Add
-    auto pubEcho = node.Advertise<msgs::StringMsg> ("/echo_topic");
+    auto pubEcho = node.Advertise<msgs::Collision> ("/echo_topic");
     msgs::Collision msgEcho;
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
@@ -190,3 +193,4 @@ TEST(TopicViewerTest, Model)
 
     EXPECT_EQ(root->rowCount(), 2);
 }
+#endif
