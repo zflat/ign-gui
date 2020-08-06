@@ -39,10 +39,12 @@ namespace ignition
 {
 namespace gui
 {
-class Field
+class PlotDataPrivate;
+
+class PlotData
 {
   /// \brief Constructor
-  public: Field();
+  public: PlotData();
 
   /// \brief Set the field Value
   /// \param[in] _value the set value
@@ -67,17 +69,16 @@ class Field
   /// \return set of registered charts
   public: std::set<int> &Charts();
 
-  /// \brief value of that field
-  private: double value;
-
-  /// \brief Registered Charts to that field
-  private: std::set<int> charts;
+  /// \brief Private data member.
+  private: std::unique_ptr<PlotDataPrivate> dataPtr;
 };
+
+class TopicPrivate;
 
 class Topic
 {
   /// \brief Constructor
-  public: explicit Topic(std::string _name);
+  public: Topic(std::string _name);
 
   /// \brief get topic name
   public: std::string Name();
@@ -95,20 +96,18 @@ class Topic
 
   /// \brief get the registered topics
   /// \return topics list
-  public: std::map<std::string, Field*> &Fields();
+  public: std::map<std::string, PlotData*> &Fields();
+
   /// \brief callback to subscribe to that topic
   /// \param[in] _msg the published msg from the topic
   public: void Callback(const google::protobuf::Message &_msg);
 
   /// \brief check the plotable types and get data from reflection
-  private: double PlotData(const google::protobuf::Message &_msg,
+  private: double FieldData(const google::protobuf::Message &_msg,
                            const google::protobuf::FieldDescriptor *field);
 
-  /// \brief topic name
-  private: std::string name;
-
-  /// \brief Plotting fields to update its values
-  private: std::map<std::string, Field*> fields;
+  /// \brief Private data member.
+  public: std::unique_ptr<TopicPrivate> dataPtr;
 };
 
 class TransportPrivate;
@@ -252,11 +251,11 @@ class PlottingInterface : public QObject
   /// \brief slot to to lestin to a timer to emit moveChart signal
   public slots: void moveCharts();
 
-  /// \brief Private data member.
-  private: std::unique_ptr<PlottingIfacePrivate> dataPtr;
-
   /// \brief configration of the timer
   private: void InitTimer();
+
+  /// \brief Private data member.
+  private: std::unique_ptr<PlottingIfacePrivate> dataPtr;
 };
 
 }

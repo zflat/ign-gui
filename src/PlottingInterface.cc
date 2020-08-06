@@ -24,16 +24,23 @@ namespace ignition
 {
 namespace gui
 {
-class PlottingIfacePrivate
+class PlotDataPrivate
 {
-  /// \brief responsible for transport messages and topics
-  public: Transport* transport;
+  /// \brief value of that field
+  public: double value;
 
-  /// \brief current plotting time
-  float time;
+  /// \brief Registered Charts to that field
+  public: std::set<int> charts;
+};
 
-  /// \brief timer to update the plotting each time step
-  QTimer* timer;
+
+class TopicPrivate
+{
+  /// \brief topic name
+  public: std::string name;
+
+  /// \brief Plotting fields to update its values
+  public: std::map<std::string, ignition::gui::PlotData*> fields;
 };
 
 class TransportPrivate
@@ -41,7 +48,19 @@ class TransportPrivate
   /// \brief Node for Commincation
   public: ignition::transport::Node node;
   /// \brief subscribed topics
-  public: std::map<std::string, Topic*> topics;
+  public: std::map<std::string, ignition::gui::Topic*> topics;
+};
+
+class PlottingIfacePrivate
+{
+  /// \brief responsible for transport messages and topics
+  public: Transport* transport;
+
+  /// \brief current plotting time
+  public: float time;
+
+  /// \brief timer to update the plotting each time step
+  public: QTimer* timer;
 };
 
 }
@@ -51,105 +70,104 @@ using namespace ignition;
 using namespace gui;
 
 // ==================== Field =======================
-Field::Field()
+PlotData::PlotData()
 {
-  this->value = 0;
+  this->dataPtr->value = 0;
 }
 
 //////////////////////////////////////////////////////
-void Field::SetValue(const double _value)
+void PlotData::SetValue(const double _value)
 {
-  this->value = _value;
+  this->dataPtr->value = _value;
 }
 
 //////////////////////////////////////////////////////
-double Field::Value() const
+double PlotData::Value() const
 {
-  return this->value;
+  return this->dataPtr->value;
 }
 
 //////////////////////////////////////////////////////
-void Field::AddChart(int _chart)
+void PlotData::AddChart(int _chart)
 {
-  this->charts.insert(_chart);
+  this->dataPtr->charts.insert(_chart);
 }
 
 //////////////////////////////////////////////////////
-void Field::RemoveChart(int _chart)
+void PlotData::RemoveChart(int _chart)
 {
-  auto chartIt = this->charts.find(_chart);
-  if (chartIt != this->charts.end())
-    this->charts.erase(chartIt);
+  auto chartIt = this->dataPtr->charts.find(_chart);
+  if (chartIt != this->dataPtr->charts.end())
+    this->dataPtr->charts.erase(chartIt);
 }
 
 //////////////////////////////////////////////////////
-int Field::ChartCount()
+int PlotData::ChartCount()
 {
-  return this->charts.size();
+  return this->dataPtr->charts.size();
 }
 
 //////////////////////////////////////////////////////
-std::set<int>& Field::Charts()
+std::set<int>& PlotData::Charts()
 {
-  return this->charts;
+  return this->dataPtr->charts;
 }
 
 //////////////////////////////////////////////////////
 Topic::Topic(std::string _name)
 {
-  this->name = _name;
+  this->dataPtr->name = _name;
 }
 
 //////////////////////////////////////////////////////
 std::string Topic::Name()
 {
-  return this->name;
+  return this->dataPtr->name;
 }
 
 //////////////////////////////////////////////////////
 void Topic::Register(std::string _fieldPath, int _chart)
 {
   // if a new field create a new field and register the chart
-  if (this->fields.count(_fieldPath) == 0)
-    this->fields[_fieldPath] = new Field();
+  if (this->dataPtr->fields.count(_fieldPath) == 0)
+    this->dataPtr->fields[_fieldPath] = new PlotData();
 
-  this->fields[_fieldPath]->AddChart(_chart);
+  this->dataPtr->fields[_fieldPath]->AddChart(_chart);
 }
 
 //////////////////////////////////////////////////////
 void Topic::UnRegister(std::string _fieldPath, int _chart)
 {
-  this->fields[_fieldPath]->RemoveChart(_chart);
+  this->dataPtr->fields[_fieldPath]->RemoveChart(_chart);
 
   // if no one registers to the field, remove it
-  if (!this->fields[_fieldPath]->ChartCount())
-    this->fields.erase(_fieldPath);
+  if (!this->dataPtr->fields[_fieldPath]->ChartCount())
+    this->dataPtr->fields.erase(_fieldPath);
 }
 
 //////////////////////////////////////////////////////
 int Topic::FieldCount()
 {
-  return this->fields.size();
+  return this->dataPtr->fields.size();
 }
 
 //////////////////////////////////////////////////////
-std::map<std::string, Field*>& Topic::Fields()
+std::map<std::string, PlotData*>& Topic::Fields()
 {
-  return this->fields;
+  return this->dataPtr->fields;
 }
 
 //////////////////////////////////////////////////////
 void Topic::Callback(const google::protobuf::Message &_msg)
 {
-  for (auto fieldIt = this->fields.begin(); fieldIt != this->fields.end();
-       fieldIt++)
+  for (auto fieldIt : this->dataPtr->fields)
   {
       auto msgDescriptor = _msg.GetDescriptor();
       auto ref = _msg.GetReflection();
 
       google::protobuf::Message *valueMsg = nullptr;
 
-      auto fieldFullPath = ignition::common::Split(fieldIt->first, '-');
+      auto fieldFullPath = ignition::common::Split(fieldIt.first, '-');
       int pathSize = fieldFullPath.size();
 
       // loop until you reach the last field in the path
@@ -179,20 +197,20 @@ void Topic::Callback(const google::protobuf::Message &_msg)
       if (valueMsg)
       {
         auto field = valueMsg->GetDescriptor()->FindFieldByName(fieldName);
-        data = this->PlotData(*valueMsg, field);
+        data = this->FieldData(*valueMsg, field);
       }
       else
       {
         auto field = msgDescriptor->FindFieldByName(fieldName);
-        data = this->PlotData(_msg, field);
+        data = this->FieldData(_msg, field);
       }
 
-      fieldIt->second->SetValue(data);
+      fieldIt.second->SetValue(data);
   }
 }
 
 //////////////////////////////////////////////////////
-double Topic::PlotData(const google::protobuf::Message &_msg,
+double Topic::FieldData(const google::protobuf::Message &_msg,
                               const google::protobuf::FieldDescriptor *_field)
 {
   using namespace google::protobuf;
@@ -260,7 +278,7 @@ void Transport::Subscribe(std::string _topic,
   // new topic
   if (this->dataPtr->topics.count(_topic) == 0)
   {
-    Topic *topicHandler = new Topic(_topic);
+    auto topicHandler = new Topic(_topic);
     this->dataPtr->topics[_topic] = topicHandler;
 
     topicHandler->Register(_fieldPath, _chart);
@@ -423,4 +441,3 @@ void PlottingInterface::moveCharts()
 {
   emit moveChart();
 }
-
