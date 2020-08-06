@@ -72,7 +72,12 @@ using namespace gui;
 // ==================== Field =======================
 PlotData::PlotData()
 {
-  this->dataPtr->value = 0;
+    this->dataPtr->value = 0;
+}
+
+PlotData::~PlotData()
+{
+
 }
 
 //////////////////////////////////////////////////////
@@ -116,7 +121,12 @@ std::set<int>& PlotData::Charts()
 //////////////////////////////////////////////////////
 Topic::Topic(std::string _name)
 {
-  this->dataPtr->name = _name;
+    this->dataPtr->name = _name;
+}
+
+Topic::~Topic()
+{
+
 }
 
 //////////////////////////////////////////////////////

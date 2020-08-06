@@ -46,6 +46,7 @@ class PlotData
   /// \brief Constructor
   public: PlotData();
 
+public: ~PlotData();
   /// \brief Set the field Value
   /// \param[in] _value the set value
   public: void SetValue(const double _value);
@@ -79,6 +80,9 @@ class Topic
 {
   /// \brief Constructor
   public: Topic(std::string _name);
+
+
+  public: ~Topic();
 
   /// \brief get topic name
   public: std::string Name();
