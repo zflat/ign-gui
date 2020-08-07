@@ -46,7 +46,8 @@ class PlotData
   /// \brief Constructor
   public: PlotData();
 
-public: ~PlotData();
+  public: ~PlotData();
+
   /// \brief Set the field Value
   /// \param[in] _value the set value
   public: void SetValue(const double _value);
@@ -111,7 +112,7 @@ class Topic
                            const google::protobuf::FieldDescriptor *field);
 
   /// \brief Private data member.
-  public: std::unique_ptr<TopicPrivate> dataPtr;
+  private: std::unique_ptr<TopicPrivate> dataPtr;
 };
 
 class TransportPrivate;
