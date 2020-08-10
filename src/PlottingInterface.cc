@@ -70,11 +70,13 @@ using namespace ignition;
 using namespace gui;
 
 // ==================== Field =======================
-PlotData::PlotData()
+PlotData::PlotData() :
+    dataPtr(std::make_unique<PlotDataPrivate>())
 {
     this->dataPtr->value = 0;
 }
 
+//////////////////////////////////////////////////////
 PlotData::~PlotData()
 {
 
@@ -119,11 +121,13 @@ std::set<int>& PlotData::Charts()
 }
 
 //////////////////////////////////////////////////////
-Topic::Topic(std::string _name)
+Topic::Topic(std::string _name) :
+    dataPtr(std::make_unique<TopicPrivate>())
 {
     this->dataPtr->name = _name;
 }
 
+//////////////////////////////////////////////////////
 Topic::~Topic()
 {
 
@@ -249,7 +253,7 @@ double Topic::FieldData(const google::protobuf::Message &_msg,
 }
 
 //  ================= Transport ==================
-Transport::Transport() : dataPtr(new TransportPrivate)
+Transport::Transport() : dataPtr(std::make_unique<TransportPrivate>())
 {
 }
 
