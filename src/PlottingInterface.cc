@@ -357,7 +357,7 @@ void PlottingInterface::unsubscribe(QString _topic,
 }
 
 //////////////////////////////////////////////////////
-int PlottingInterface::Timeout()
+float PlottingInterface::Timeout()
 {
   return this->dataPtr->timer->interval();
 }
@@ -447,7 +447,7 @@ void PlottingInterface::UpdateGui()
       }
     }
   }
-  this->dataPtr->time++;
+  this->dataPtr->time += (this->Timeout()/1000);
 }
 
 //////////////////////////////////////////////////////

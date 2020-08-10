@@ -70,16 +70,18 @@ Rectangle {
             anchors.fill: parent
             onDropped:
             {
+                var text = drop.getDataAsString("text/plain");
+
                 // topic and path is separated with ','
-                if (drop.text.search(",") === -1)
+                if (text.search(",") === -1)
                 {
                     console.log("Error Parsing Dragged Item");
                     return;
                 }
 
-                if (infoRect.isComponentDrop(drop.text))
+                if (infoRect.isComponentDrop(text))
                 {
-                    var textList = drop.text.split(",");
+                    var textList = text.split(",");
                     var entity = textList[1];
                     var typeId = textList[2];
                     var type = textList[3];
@@ -96,7 +98,7 @@ Rectangle {
                 }
                 else
                 {
-                    var topic_path = drop.text.split(",");
+                    var topic_path = text.split(",");
                     var topic = topic_path[0];
                     var path = topic_path[1];
 

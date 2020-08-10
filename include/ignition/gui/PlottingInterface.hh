@@ -46,6 +46,7 @@ class PlotData
   /// \brief Constructor
   public: PlotData();
 
+  /// \brief Destructor
   public: ~PlotData();
 
   /// \brief Set the field Value
@@ -82,7 +83,7 @@ class Topic
   /// \brief Constructor
   public: Topic(std::string _name);
 
-
+  /// \brief Destructor
   public: ~Topic();
 
   /// \brief get topic name
@@ -191,7 +192,7 @@ class PlottingInterface : public QObject
 
   /// \brief Get the timeout of updating the plot
   /// \return updating plot timeout
-  public: int Timeout();
+  public: float Timeout();
 
   /// \brief Get the Plotting Time
   /// \return Plotting Time
