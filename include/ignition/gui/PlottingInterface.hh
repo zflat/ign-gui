@@ -17,23 +17,16 @@
 #ifndef IGNITION_GUI_PLOTTINGINTERFACE_HH_
 #define IGNITION_GUI_PLOTTINGINTERFACE_HH_
 
-#include <QObject>
-#include <QTimer>
-#include <QString>
-#include <QVariant>
-
-#include <google/protobuf/message.h>
-#include <google/protobuf/descriptor.h>
-
 #include <map>
 #include <set>
 #include <string>
 #include <memory>
 
-#include <ignition/transport/Node.hh>
-#include <ignition/transport/MessageInfo.hh>
-#include <ignition/transport/Publisher.hh>
+#include <QObject>
+#include <QString>
 
+#include <google/protobuf/message.h>
+#include <google/protobuf/descriptor.h>
 
 namespace ignition
 {
@@ -64,12 +57,12 @@ class PlotData
   /// \brief UnRegister a chart from plotting that field
   public: void RemoveChart(int _chart);
 
-  /// \brief size of registered charts
-  /// \return charts size
-  public: int ChartCount();
+  /// \brief Number of registered charts
+  /// \return Charts count
+  public: int ChartCount() const;
 
   /// \brief Get all registered charts to that field
-  /// \return set of registered charts
+  /// \return Set of registered charts
   public: std::set<int> &Charts();
 
   /// \brief Private data member.
@@ -81,36 +74,36 @@ class TopicPrivate;
 class Topic
 {
   /// \brief Constructor
-  public: Topic(std::string _name);
+  public: Topic(const std::string &_name);
 
   /// \brief Destructor
   public: ~Topic();
 
-  /// \brief get topic name
-  public: std::string Name();
+  /// \brief Get topic name
+  /// \return Topic name
+  public: std::string Name() const;
 
   /// \brief Register a chart to a field
   /// \param[in] _fieldPath model path to the field as an ID
-  public: void Register(std::string _fieldPath, int _chart);
+  /// \param[in] _chart Chart ID
+  public: void Register(const std::string &_fieldPath, int _chart);
 
-  /// \brief remove field from the topic
-  public: void UnRegister(std::string _fieldPath, int _chart);
+  /// \brief Remove field from the plot
+  /// \param[in] _fieldPath model path to the field as an ID
+  /// \param[in] _chart Chart ID
+  public: void UnRegister(const std::string &_fieldPath, int _chart);
 
   /// \brief size of registered fields
   /// \return fields size
-  public: int FieldCount();
+  public: int FieldCount() const;
 
-  /// \brief get the registered topics
-  /// \return topics list
-  public: std::map<std::string, PlotData*> &Fields();
+  /// \brief Get the registered fields
+  /// \return Map of fields to their plots
+  public: std::map<std::string, PlotData *> &Fields();
 
-  /// \brief callback to subscribe to that topic
+  /// \brief Callback to receive messages
   /// \param[in] _msg the published msg from the topic
   public: void Callback(const google::protobuf::Message &_msg);
-
-  /// \brief check the plotable types and get data from reflection
-  private: double FieldData(const google::protobuf::Message &_msg,
-                           const google::protobuf::FieldDescriptor *field);
 
   /// \brief Private data member.
   private: std::unique_ptr<TopicPrivate> dataPtr;
@@ -118,7 +111,7 @@ class Topic
 
 class TransportPrivate;
 
-/// \brief handle Transport Topics Subscribing for one object(Chart)
+/// \brief Handle transport topics subscribing for one object (Chart)
 class Transport
 {
   /// \brief Constructor
@@ -127,29 +120,29 @@ class Transport
   /// \brief Destructor
   public: ~Transport();
 
-  /// \brief unsubscribe/deattatch a field from a certain chart
+  /// \brief Unsubscribe/deattatch a field from a certain chart
   /// \param[in] _topic topic name
   /// \param[in] _fieldPath field path ID
   /// \param[in] _chart chart ID
-  public: void Unsubscribe(std::string _topic,
-                           std::string _fieldPath,
+  public: void Unsubscribe(const std::string &_topic,
+                           const std::string &_fieldPath,
                            int _chart);
 
-  /// \brief subscribe/attatch a field from a certain chart
+  /// \brief Subscribe/attatch a field from a certain chart
   /// \param[in] _topic topic name
   /// \param[in] _fieldPath field path ID
   /// \param[in] _chart chart ID
-  public: void Subscribe(std::string _topic,
-                         std::string _fieldPath,
+  public: void Subscribe(const std::string &_topic,
+                         const std::string &_fieldPath,
                          int _chart);
 
-  /// \brief is the topic exist in the transport network
+  /// \brief True if the topic exists in the transport network
   /// \param[in] _topic topic name
   /// \return True if found in the transport, False if not found
-  public: bool TopicFound(const std::string &_topic);
+  public: bool TopicFound(const std::string &_topic) const;
 
-  /// \brief get the registered topics
-  /// \return topics list
+  /// \brief Get the registered topics
+  /// \return Topics list
   public: const std::map<std::string, Topic*> &Topics();
 
   private: std::unique_ptr<TransportPrivate> dataPtr;
@@ -192,11 +185,11 @@ class PlottingInterface : public QObject
 
   /// \brief Get the timeout of updating the plot
   /// \return updating plot timeout
-  public: float Timeout();
+  public: float Timeout() const;
 
   /// \brief Get the Plotting Time
   /// \return Plotting Time
-  public: float Time();
+  public: float Time() const;
 
   /// \brief plot a point to a chart
   /// \param[in] _chart chart ID
@@ -239,8 +232,8 @@ class PlottingInterface : public QObject
   /// \param[in] _chart chart id
   signals: void ComponentSubscribe(uint64_t _entity,
                                    uint64_t _typeId,
-                                   std::string _type,
-                                   std::string _attribute,
+                                   const std::string &_type,
+                                   const std::string &_attribute,
                                    int _chart);
 
   /// \brief Notify the gazebo plugin to unsubscribe a component data
@@ -251,7 +244,7 @@ class PlottingInterface : public QObject
   /// \param[in] _chart chart id
   signals: void ComponentUnSubscribe(uint64_t _entity,
                                      uint64_t _typeId,
-                                     std::string _attribute,
+                                     const std::string &_attribute,
                                      int _chart);
 
   /// \brief slot to to lestin to a timer to emit moveChart signal

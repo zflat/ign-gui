@@ -15,10 +15,16 @@
  *
 */
 
-#include <ignition/gui/PlottingInterface.hh>
-#include <ignition/gui/Application.hh>
-#include <ignition/common.hh>
-#include <ignition/gui.hh>
+#include <sstream>
+
+#include <ignition/common/Console.hh>
+#include <ignition/common/StringUtils.hh>
+#include <ignition/transport/Node.hh>
+#include <ignition/transport/MessageInfo.hh>
+#include <ignition/transport/Publisher.hh>
+
+#include "ignition/gui/PlottingInterface.hh"
+#include "ignition/gui/Application.hh"
 
 namespace ignition
 {
@@ -26,7 +32,7 @@ namespace gui
 {
 class PlotDataPrivate
 {
-  /// \brief value of that field
+  /// \brief Value of that field
   public: double value;
 
   /// \brief Registered Charts to that field
@@ -36,7 +42,14 @@ class PlotDataPrivate
 
 class TopicPrivate
 {
-  /// \brief topic name
+  /// \brief Check the plotable types and get data from reflection
+  /// \param[in] _msg Message to get data from
+  /// \param[in] _field Field within the message to get
+  /// \return Plottable value as double, zero if not plottable
+  public: double FieldData(const google::protobuf::Message &_msg,
+                           const google::protobuf::FieldDescriptor *_field);
+
+  /// \brief Topic name
   public: std::string name;
 
   /// \brief Plotting fields to update its values
@@ -53,14 +66,14 @@ class TransportPrivate
 
 class PlottingIfacePrivate
 {
-  /// \brief responsible for transport messages and topics
-  public: Transport* transport;
+  /// \brief Responsible for transport messages and topics
+  public: Transport *transport;
 
   /// \brief current plotting time
   public: float time;
 
   /// \brief timer to update the plotting each time step
-  public: QTimer* timer;
+  public: QTimer *timer;
 };
 
 }
@@ -69,7 +82,7 @@ class PlottingIfacePrivate
 using namespace ignition;
 using namespace gui;
 
-// ==================== Field =======================
+//////////////////////////////////////////////////////
 PlotData::PlotData() :
     dataPtr(std::make_unique<PlotDataPrivate>())
 {
@@ -79,7 +92,6 @@ PlotData::PlotData() :
 //////////////////////////////////////////////////////
 PlotData::~PlotData()
 {
-
 }
 
 //////////////////////////////////////////////////////
@@ -109,19 +121,19 @@ void PlotData::RemoveChart(int _chart)
 }
 
 //////////////////////////////////////////////////////
-int PlotData::ChartCount()
+int PlotData::ChartCount() const
 {
   return this->dataPtr->charts.size();
 }
 
 //////////////////////////////////////////////////////
-std::set<int>& PlotData::Charts()
+std::set<int> &PlotData::Charts()
 {
   return this->dataPtr->charts;
 }
 
 //////////////////////////////////////////////////////
-Topic::Topic(std::string _name) :
+Topic::Topic(const std::string &_name) :
     dataPtr(std::make_unique<TopicPrivate>())
 {
     this->dataPtr->name = _name;
@@ -130,17 +142,16 @@ Topic::Topic(std::string _name) :
 //////////////////////////////////////////////////////
 Topic::~Topic()
 {
-
 }
 
 //////////////////////////////////////////////////////
-std::string Topic::Name()
+std::string Topic::Name() const
 {
   return this->dataPtr->name;
 }
 
 //////////////////////////////////////////////////////
-void Topic::Register(std::string _fieldPath, int _chart)
+void Topic::Register(const std::string &_fieldPath, int _chart)
 {
   // if a new field create a new field and register the chart
   if (this->dataPtr->fields.count(_fieldPath) == 0)
@@ -150,7 +161,7 @@ void Topic::Register(std::string _fieldPath, int _chart)
 }
 
 //////////////////////////////////////////////////////
-void Topic::UnRegister(std::string _fieldPath, int _chart)
+void Topic::UnRegister(const std::string &_fieldPath, int _chart)
 {
   this->dataPtr->fields[_fieldPath]->RemoveChart(_chart);
 
@@ -160,13 +171,13 @@ void Topic::UnRegister(std::string _fieldPath, int _chart)
 }
 
 //////////////////////////////////////////////////////
-int Topic::FieldCount()
+int Topic::FieldCount() const
 {
   return this->dataPtr->fields.size();
 }
 
 //////////////////////////////////////////////////////
-std::map<std::string, PlotData*>& Topic::Fields()
+std::map<std::string, PlotData*> &Topic::Fields()
 {
   return this->dataPtr->fields;
 }
@@ -176,56 +187,56 @@ void Topic::Callback(const google::protobuf::Message &_msg)
 {
   for (auto fieldIt : this->dataPtr->fields)
   {
-      auto msgDescriptor = _msg.GetDescriptor();
-      auto ref = _msg.GetReflection();
+    auto msgDescriptor = _msg.GetDescriptor();
+    auto ref = _msg.GetReflection();
 
-      google::protobuf::Message *valueMsg = nullptr;
+    google::protobuf::Message *valueMsg = nullptr;
 
-      auto fieldFullPath = ignition::common::Split(fieldIt.first, '-');
-      int pathSize = fieldFullPath.size();
+    auto fieldFullPath = ignition::common::Split(fieldIt.first, '-');
+    int pathSize = fieldFullPath.size();
 
-      // loop until you reach the last field in the path
-      for (int i = 0; i < pathSize-1 ; i++)
-      {
-        std::string fieldName = fieldFullPath[i];
+    // loop until you reach the last field in the path
+    for (int i = 0; i < pathSize-1 ; i++)
+    {
+      std::string fieldName = fieldFullPath[i];
 
-        auto field = msgDescriptor->FindFieldByName(fieldName);
+      auto field = msgDescriptor->FindFieldByName(fieldName);
 
-        msgDescriptor = field->message_type();
-
-        if (valueMsg)
-          valueMsg = ref->MutableMessage
-                  (const_cast<google::protobuf::Message *>(valueMsg), field);
-        else
-        {
-            valueMsg = ref->MutableMessage
-                    (const_cast<google::protobuf::Message *>(&_msg), field);
-        }
-
-          ref = valueMsg->GetReflection();
-      }
-
-      std::string fieldName = fieldFullPath[pathSize-1];
-      double data;
+      msgDescriptor = field->message_type();
 
       if (valueMsg)
-      {
-        auto field = valueMsg->GetDescriptor()->FindFieldByName(fieldName);
-        data = this->FieldData(*valueMsg, field);
-      }
+        valueMsg = ref->MutableMessage
+                (const_cast<google::protobuf::Message *>(valueMsg), field);
       else
       {
-        auto field = msgDescriptor->FindFieldByName(fieldName);
-        data = this->FieldData(_msg, field);
+          valueMsg = ref->MutableMessage
+                  (const_cast<google::protobuf::Message *>(&_msg), field);
       }
 
-      fieldIt.second->SetValue(data);
+        ref = valueMsg->GetReflection();
+    }
+
+    std::string fieldName = fieldFullPath[pathSize-1];
+    double data;
+
+    if (valueMsg)
+    {
+      auto field = valueMsg->GetDescriptor()->FindFieldByName(fieldName);
+      data = this->dataPtr->FieldData(*valueMsg, field);
+    }
+    else
+    {
+      auto field = msgDescriptor->FindFieldByName(fieldName);
+      data = this->dataPtr->FieldData(_msg, field);
+    }
+
+    fieldIt.second->SetValue(data);
   }
 }
 
 //////////////////////////////////////////////////////
-double Topic::FieldData(const google::protobuf::Message &_msg,
-                              const google::protobuf::FieldDescriptor *_field)
+double TopicPrivate::FieldData(const google::protobuf::Message &_msg,
+                               const google::protobuf::FieldDescriptor *_field)
 {
   using namespace google::protobuf;
   auto ref = _msg.GetReflection();
@@ -252,7 +263,7 @@ double Topic::FieldData(const google::protobuf::Message &_msg,
   }
 }
 
-//  ================= Transport ==================
+////////////////////////////////////////////
 Transport::Transport() : dataPtr(std::make_unique<TransportPrivate>())
 {
 }
@@ -267,26 +278,26 @@ Transport::~Transport()
 }
 
 ////////////////////////////////////////////
-void Transport::Unsubscribe(std::string _topic,
-                              std::string _fieldPath,
-                              int _chart)
+void Transport::Unsubscribe(const std::string &_topic,
+                            const std::string &_fieldPath,
+                            int _chart)
 {
   if (this->dataPtr->topics.count(_topic))
   {
-      this->dataPtr->topics[_topic]->UnRegister(_fieldPath, _chart);
+    this->dataPtr->topics[_topic]->UnRegister(_fieldPath, _chart);
 
-      // if there is no registered fields, unsubscribe from the topic
-      if (this->dataPtr->topics[_topic]->FieldCount() == 0)
-      {
-        this->dataPtr->node.Unsubscribe(_topic);
-        this->dataPtr->topics.erase(_topic);
-      }
+    // if there is no registered fields, unsubscribe from the topic
+    if (this->dataPtr->topics[_topic]->FieldCount() == 0)
+    {
+      this->dataPtr->node.Unsubscribe(_topic);
+      this->dataPtr->topics.erase(_topic);
+    }
   }
 }
 
 ////////////////////////////////////////////
-void Transport::Subscribe(std::string _topic,
-                          std::string _fieldPath,
+void Transport::Subscribe(const std::string &_topic,
+                          const std::string &_fieldPath,
                           int _chart)
 {
   // new topic
@@ -298,7 +309,6 @@ void Transport::Subscribe(std::string _topic,
     topicHandler->Register(_fieldPath, _chart);
     this->dataPtr->node.Subscribe(_topic, &Topic::Callback, topicHandler);
   }
-
   // already exist topic
   else
   {
@@ -309,13 +319,13 @@ void Transport::Subscribe(std::string _topic,
 }
 
 //////////////////////////////////////////////////////
-const std::map<std::string, Topic*>& Transport::Topics()
+const std::map<std::string, Topic*> &Transport::Topics()
 {
   return this->dataPtr->topics;
 }
 
 //////////////////////////////////////////////////////
-bool Transport::TopicFound(const std::string &_topic)
+bool Transport::TopicFound(const std::string &_topic) const
 {
   // check if the topic exist
   std::vector<std::string> topics;
@@ -330,8 +340,7 @@ bool Transport::TopicFound(const std::string &_topic)
   return true;
 }
 
-
-// ================ Plotting Interface ==================
+//////////////////////////////////////////////////////
 PlottingInterface::PlottingInterface() : QObject(),
     dataPtr(std::make_unique<PlottingIfacePrivate>())
 {
@@ -357,13 +366,13 @@ void PlottingInterface::unsubscribe(QString _topic,
 }
 
 //////////////////////////////////////////////////////
-float PlottingInterface::Timeout()
+float PlottingInterface::Timeout() const
 {
   return this->dataPtr->timer->interval();
 }
 
 //////////////////////////////////////////////////////
-float PlottingInterface::Time()
+float PlottingInterface::Time() const
 {
   return this->dataPtr->time;
 }
@@ -453,5 +462,5 @@ void PlottingInterface::UpdateGui()
 //////////////////////////////////////////////////////
 void PlottingInterface::moveCharts()
 {
-  emit moveChart();
+  emit this->moveChart();
 }

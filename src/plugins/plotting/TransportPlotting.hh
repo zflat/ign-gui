@@ -14,8 +14,8 @@
  * limitations under the License.
  *
 */
-#ifndef IGNITION_GUI_PLUGINS_GuiPlotting_HH_
-#define IGNITION_GUI_PLUGINS_GuiPlotting_HH_
+#ifndef IGNITION_GUI_PLUGINS_TRANSPORTPLOTTING_HH_
+#define IGNITION_GUI_PLUGINS_TRANSPORTPLOTTING_HH_
 
 #include <ignition/gui/Plugin.hh>
 #include <ignition/gui/PlottingInterface.hh>
@@ -27,15 +27,20 @@ namespace gui
 namespace plugins
 {
 
+/// \brief Plots fields from Ignition Transport topics.
+/// Fields can be dragged from the Topic Viewer or the Component Inspector.
 class TransportPlotting : public ignition::gui::Plugin
 {
   Q_OBJECT
 
+  /// \brief Constructor
   public: TransportPlotting();
-  public: ~TransportPlotting();
-  public: void LoadConfig(const tinyxml2::XMLElement *) override;
 
-  public: ignition::gui::PlottingInterface plot;
+  /// \brief Destructor
+  public: ~TransportPlotting();
+
+  // Documentation inherited
+  public: void LoadConfig(const tinyxml2::XMLElement *) override;
 };
 
 }
