@@ -26,8 +26,8 @@
 #include "ignition/gui/MainWindow.hh"
 #include "ignition/gui/Plugin.hh"
 
-int gg_argc = 1;
-char **gg_argv = new char *[gg_argc];
+int g_argc = 1;
+char **g_argv = new char *[g_argc];
 
 using namespace ignition;
 using namespace gui;
@@ -44,14 +44,16 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Constructor))
 
   // One app construct - destruct
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     EXPECT_NE(nullptr, qGuiApp);
     ASSERT_NE(nullptr, App());
     EXPECT_NE(nullptr, App()->Engine());
 
     // No crash if argc and argv were correctly set
+#ifndef __APPLE__
     QCoreApplication::arguments();
+#endif
   }
 
   // No Qt app
@@ -69,21 +71,21 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadPlugin))
 
   // Official plugin
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     EXPECT_TRUE(app.LoadPlugin("Publisher"));
   }
 
   // Inexistent plugin
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     EXPECT_FALSE(app.LoadPlugin("_doesnt_exist"));
   }
 
   // Plugin path added programmatically
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
     app.AddPluginPath(std::string(PROJECT_BINARY_PATH) + "/lib");
 
     EXPECT_TRUE(app.LoadPlugin("TestPlugin"));
@@ -94,7 +96,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadPlugin))
     setenv("TEST_ENV_VAR",
         (std::string(PROJECT_BINARY_PATH) + "/lib").c_str(), 1);
 
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
     app.SetPluginPathEnv("TEST_ENV_VAR");
 
     EXPECT_TRUE(app.LoadPlugin("TestPlugin"));
@@ -102,7 +104,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadPlugin))
 
   // Plugin which doesn't inherit from ignition::gui::Plugin
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
     app.AddPluginPath(std::string(PROJECT_BINARY_PATH) + "/lib");
 
     EXPECT_FALSE(app.LoadPlugin("TestBadInheritancePlugin"));
@@ -110,7 +112,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadPlugin))
 
   // Plugin which is not registered
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
     app.AddPluginPath(std::string(PROJECT_BINARY_PATH) + "/lib");
 
     EXPECT_FALSE(app.LoadPlugin("TestNotRegisteredPlugin"));
@@ -126,14 +128,14 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadConfig))
 
   // Empty string
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     EXPECT_FALSE(app.LoadConfig(""));
   }
 
   // Test config file
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     // Add test plugin to path (referenced in config)
     auto testBuildPath = std::string(PROJECT_BINARY_PATH) + "/lib/";
@@ -154,7 +156,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(LoadDefaultConfig))
 
   // Test config file
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     // Add test plugin to path (referenced in config)
     auto testBuildPath = ignition::common::joinPaths(
@@ -179,7 +181,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(InitializeMainWindow))
 
   // No plugins
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     auto wins = app.allWindows();
     ASSERT_EQ(wins.size(), 1);
@@ -193,7 +195,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(InitializeMainWindow))
 
   // Load plugin
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     EXPECT_TRUE(app.LoadPlugin("Publisher"));
 
@@ -217,7 +219,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(InitializeMainWindow))
 
   // Load config
   {
-    Application app(gg_argc, gg_argv);
+    Application app(g_argc, g_argv);
 
     // Add test plugin to path (referenced in config)
     app.AddPluginPath(testBuildPath);
@@ -249,7 +251,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Dialog))
 
   // Single dialog
   {
-    Application app(gg_argc, gg_argv, WindowType::kDialog);
+    Application app(g_argc, g_argv, WindowType::kDialog);
     EXPECT_EQ(app.allWindows().size(), 0);
 
     // Add test plugin to path
@@ -277,13 +279,13 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Dialog))
     // Exec dialog
     app.exec();
 
-    // Make sure timer was triggered
+    // Make sure timer was trigered
     EXPECT_TRUE(closed);
   }
 
   // Multiple dialogs
   {
-    Application app(gg_argc, gg_argv, WindowType::kDialog);
+    Application app(g_argc, g_argv, WindowType::kDialog);
     EXPECT_EQ(app.allWindows().size(), 0);
 
     // Add test plugin to path
@@ -310,7 +312,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Dialog))
     // Exec dialog
     app.exec();
 
-    // Make sure timer was triggered
+    // Make sure timer was trigered
     EXPECT_TRUE(closed);
   }
 }
@@ -322,7 +324,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(messageHandler))
 
   EXPECT_EQ(nullptr, qGuiApp);
 
-  Application app(gg_argc, gg_argv);
+  Application app(g_argc, g_argv);
 
   // \todo Verify output, see ignition::commmon::Console_TEST for example
   qDebug("This came from qDebug");
