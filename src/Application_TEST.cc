@@ -33,8 +33,9 @@ using namespace ignition;
 using namespace gui;
 
 // See https://github.com/ignitionrobotics/ign-gui/issues/75
+// See https://github.com/ignitionrobotics/ign-gui/issues/123
 //////////////////////////////////////////////////
-TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Constructor))
+TEST(ApplicationTest, IGN_UTILS_TEST_ENABLED_ONLY_ON_LINUX(Constructor))
 {
   ignition::common::Console::SetVerbosity(4);
 
@@ -51,9 +52,7 @@ TEST(ApplicationTest, IGN_UTILS_TEST_DISABLED_ON_WIN32(Constructor))
     EXPECT_NE(nullptr, App()->Engine());
 
     // No crash if argc and argv were correctly set
-#ifndef __APPLE__
     QCoreApplication::arguments();
-#endif
   }
 
   // No Qt app
