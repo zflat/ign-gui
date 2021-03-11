@@ -591,42 +591,39 @@ rendering::VisualPtr SceneManager::LoadVisual(const msgs::Visual &_msg)
     visualVis->AddGeometry(geom);
     visualVis->SetLocalScale(scale);
 
-    // set material
-    rendering::MaterialPtr material{nullptr};
-    if (_msg.has_material())
-    {
-      material = this->LoadMaterial(_msg.material());
-    }
-    // Don't set a default material for meshes because they
-    // may have their own
+    // set material for non-meshes because they may have their own
     // TODO(anyone) support overriding mesh material
-    else if (_msg.geometry().has_mesh())
+    if (!_msg.geometry().has_mesh())
     {
-      material = geom->Material();
-    }
-    else
-    {
-      // create default material
-      material = this->scene->Material("ign-grey");
-      if (!material)
+      rendering::MaterialPtr material{nullptr};
+      if (_msg.has_material())
       {
-        material = this->scene->CreateMaterial("ign-grey");
-        material->SetAmbient(0.3, 0.3, 0.3);
-        material->SetDiffuse(0.7, 0.7, 0.7);
-        material->SetSpecular(1.0, 1.0, 1.0);
-        material->SetRoughness(0.2f);
-        material->SetMetalness(1.0f);
+        material = this->LoadMaterial(_msg.material());
       }
+      else
+      {
+        // create default material
+        material = this->scene->Material("ign-grey");
+        if (!material)
+        {
+          material = this->scene->CreateMaterial("ign-grey");
+          material->SetAmbient(0.3, 0.3, 0.3);
+          material->SetDiffuse(0.7, 0.7, 0.7);
+          material->SetSpecular(1.0, 1.0, 1.0);
+          material->SetRoughness(0.2f);
+          material->SetMetalness(1.0f);
+        }
+      }
+
+      material->SetTransparency(_msg.transparency());
+
+      // TODO(anyone) Get roughness and metalness from message instead
+      // of giving a default value.
+      material->SetRoughness(0.3f);
+      material->SetMetalness(0.3f);
+
+      geom->SetMaterial(material);
     }
-
-    material->SetTransparency(_msg.transparency());
-
-    // TODO(anyone) Get roughness and metalness from message instead
-    // of giving a default value.
-    material->SetRoughness(0.3f);
-    material->SetMetalness(0.3f);
-
-    geom->SetMaterial(material);
   }
   else
   {
