@@ -39,18 +39,18 @@ Rectangle {
    * Gamma correction for sRGB output. Enabled when engine is set to ogre2
    */
   GammaAdjust {
-      anchors.fill: renderWindow
-      source: renderWindow
-      gamma: 2.4
-      enabled: gammaCorrect
-      visible: gammaCorrect
+    anchors.fill: renderWindow
+    source: renderWindow
+    gamma: 2.4
+    enabled: gammaCorrect
+    visible: gammaCorrect
   }
 
   onParentChanged: {
     if (undefined === parent)
       return;
 
-      width = Qt.binding(function() {return parent.parent.width})
-      height = Qt.binding(function() {return parent.parent.height})
+    width = Qt.binding(function() {return parent.parent.width})
+    height = Qt.binding(function() {return parent.parent.height})
   }
 }

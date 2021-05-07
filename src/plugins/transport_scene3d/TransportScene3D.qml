@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import QtQuick.Layouts 1.3
 
 import "qrc:/qml"
 
-Scene3D {
+Scene3DInterface {
   Layout.minimumWidth: 600
   Layout.minimumHeight: 600
 }

@@ -36,6 +36,7 @@ set (headers
   Helpers.hh
   ign.hh
   qt.h
+  Scene3DInterface.hh
   SearchModel.hh
   System.hh
 )

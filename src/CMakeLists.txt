@@ -10,11 +10,11 @@ set (sources
   ${CMAKE_CURRENT_SOURCE_DIR}/MainWindow.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/PlottingInterface.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/Plugin.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scene3D/Scene3DInterface.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scene3D/RenderWindow.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scene3D/SceneManager.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scene3D/IgnRenderer.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/Scene3D/TextureNode.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rendering/Scene3DInterface.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rendering/RenderWindow.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rendering/SceneManager.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rendering/IgnRenderer.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/rendering/TextureNode.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/SearchModel.cc
   PARENT_SCOPE
 )

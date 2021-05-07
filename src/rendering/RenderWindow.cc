@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2021 Open Source Robotics Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
 #include "RenderWindow.hh"
 #include "TextureNode.hh"
 
@@ -15,7 +31,7 @@ class RenderWindowItemPrivate
   public: common::MouseEvent mouseEvent;
 
   /// \brief Render thread
-  public : RenderThread *renderThread = nullptr;
+  public : RenderThread *renderThread{nullptr};
 
   //// \brief List of threads
   public: static QList<QThread *> threads;
@@ -59,10 +75,6 @@ void RenderWindowItem::Ready()
   this->connect(this, &QObject::destroyed,
       this->dataPtr->renderThread, &RenderThread::ShutDown,
       Qt::QueuedConnection);
-
-  this->connect(&this->dataPtr->renderThread->ignRenderer,
-      &IgnRenderer::FollowTargetChanged,
-      this, &RenderWindowItem::SetFollowTarget, Qt::QueuedConnection);
 
   this->connect(this, &QQuickItem::widthChanged,
       this->dataPtr->renderThread, &RenderThread::SizeChanged);
@@ -141,45 +153,6 @@ QSGNode *RenderWindowItem::updatePaintNode(QSGNode *_node,
 }
 
 /////////////////////////////////////////////////
-void RenderWindowItem::SetFollowTarget(const std::string &_target,
-    bool _waitForTarget)
-{
-  this->setProperty("message", _target.empty() ? "" :
-      "Press Escape to exit Follow mode");
-  this->dataPtr->renderThread->ignRenderer.SetFollowTarget(_target,
-      _waitForTarget);
-}
-
-void RenderWindowItem::SetFollowWorldFrame(bool _worldFrame)
-{
-  this->dataPtr->renderThread->ignRenderer.SetFollowWorldFrame(_worldFrame);
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetFollowOffset(const math::Vector3d &_offset)
-{
-  this->dataPtr->renderThread->ignRenderer.SetFollowOffset(_offset);
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetMoveTo(const std::string &_target)
-{
-  this->dataPtr->renderThread->ignRenderer.SetMoveTo(_target);
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetBackgroundColor(const math::Color &_color)
-{
-  this->dataPtr->renderThread->ignRenderer.backgroundColor = _color;
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetAmbientLight(const math::Color &_ambient)
-{
-  this->dataPtr->renderThread->ignRenderer.ambientLight = _ambient;
-}
-
-/////////////////////////////////////////////////
 void RenderWindowItem::SetEngineName(const std::string &_name)
 {
   this->dataPtr->renderThread->ignRenderer.engineName = _name;
@@ -192,71 +165,12 @@ void RenderWindowItem::SetSceneName(const std::string &_name)
 }
 
 /////////////////////////////////////////////////
-void RenderWindowItem::SetCameraPose(const math::Pose3d &_pose)
-{
-  this->dataPtr->renderThread->ignRenderer.cameraPose = _pose;
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetSceneService(const std::string &_service)
-{
-  this->dataPtr->renderThread->ignRenderer.sceneService = _service;
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetPoseTopic(const std::string &_topic)
-{
-  this->dataPtr->renderThread->ignRenderer.poseTopic = _topic;
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetDeletionTopic(const std::string &_topic)
-{
-  this->dataPtr->renderThread->ignRenderer.deletionTopic = _topic;
-}
-
-/////////////////////////////////////////////////
-void RenderWindowItem::SetSceneTopic(const std::string &_topic)
-{
-  this->dataPtr->renderThread->ignRenderer.sceneTopic = _topic;
-}
-
-void RenderWindowItem::SetSkyEnabled(const bool &_sky)
-{
-  this->dataPtr->renderThread->ignRenderer.sky = _sky;
-}
-
-void RenderWindowItem::SetShowGrid(const bool _grid)
-{
-  this->dataPtr->renderThread->ignRenderer.SetShowGrid(_grid);
-}
-
-void RenderWindowItem::SetModel(const msgs::Model &_model)
-{
-  this->dataPtr->renderThread->ignRenderer.SetModel(_model);
-}
-
-void RenderWindowItem::SetScene(const msgs::Scene &_scene)
-{
-  this->dataPtr->renderThread->ignRenderer.SetScene(_scene);
-}
-
-void RenderWindowItem::UpdatePoses(std::unordered_map<long unsigned int, math::Pose3d> &_poses)
-{
-  this->dataPtr->renderThread->ignRenderer.UpdatePoses(_poses);
-}
-
-void RenderWindowItem::SetFollowPGain(const double &_gain)
-{
-  this->dataPtr->renderThread->ignRenderer.SetFollowPGain(_gain);
-}
-
-/////////////////////////////////////////////////
 void RenderWindowItem::SetVisibilityMask(uint32_t _mask)
 {
   this->dataPtr->renderThread->ignRenderer.visibilityMask = _mask;
 }
 
+/////////////////////////////////////////////////
 bool RenderWindowItem::IsSceneAvailable()
 {
   return this->dataPtr->renderThread->ignRenderer.initialized;
@@ -273,7 +187,8 @@ void RenderWindowItem::mousePressEvent(QMouseEvent *_e)
       this->dataPtr->mouseEvent);
 }
 
-void RenderWindowItem::keyPressEvent(QKeyEvent *_e)
+/////////////////////////////////////////////////
+void RenderWindowItem::keyPressEvent(QKeyEvent *)
 {
 }
 
@@ -282,13 +197,6 @@ void RenderWindowItem::keyReleaseEvent(QKeyEvent *_e)
 {
   if (_e->key() == Qt::Key_Escape)
   {
-    if (!this->dataPtr->renderThread->ignRenderer.FollowTarget().empty())
-    {
-      this->dataPtr->renderThread->ignRenderer.SetFollowTarget(std::string(), false);
-      this->setProperty("message", "");
-
-      _e->accept();
-    }
   }
 }
 
@@ -334,25 +242,6 @@ void RenderWindowItem::wheelEvent(QWheelEvent *_e)
   this->dataPtr->renderThread->ignRenderer.NewMouseEvent(
       this->dataPtr->mouseEvent, math::Vector2d(scroll, scroll));
 }
-
-///////////////////////////////////////////////////
-// void Scene3D::resizeEvent(QResizeEvent *_e)
-// {
-//  if (this->dataPtr->renderWindow)
-//  {
-//    this->dataPtr->renderWindow->OnResize(_e->size().width(),
-//                                          _e->size().height());
-//  }
-//
-//  if (this->dataPtr->camera)
-//  {
-//    this->dataPtr->camera->SetAspectRatio(
-//        static_cast<double>(this->width()) / this->height());
-//    this->dataPtr->camera->SetHFOV(M_PI * 0.5);
-//  }
-// }
-//
-
 
 /////////////////////////////////////////////////
 RenderThread::RenderThread()

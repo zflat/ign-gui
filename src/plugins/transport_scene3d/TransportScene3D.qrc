@@ -1,0 +1,5 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="TransportScene3D/">
+  <file>TransportScene3D.qml</file>
+</qresource>
+</RCC>

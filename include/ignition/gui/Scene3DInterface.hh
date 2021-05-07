@@ -25,17 +25,6 @@
 #include <ignition/math/Pose3.hh>
 #include <ignition/math/Color.hh>
 
-#ifdef _MSC_VER
-#pragma warning(push, 0)
-#endif
-#include <ignition/msgs.hh>
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-#include <ignition/msgs/boolean.pb.h>
-#include <ignition/msgs/stringmsg.pb.h>
-
 #include <QQuickItem>
 
 namespace ignition
@@ -43,22 +32,18 @@ namespace ignition
 namespace gui
 {
   class Scene3DInterfacePrivate;
-  /// \brief Creates a new ignition rendering scene or adds a user-camera to an
-  /// existing scene. It is possible to orbit the camera around the scene with
-  /// the mouse. Use other plugins to manage objects in the scene.
+
+  /// \brief Creates a 3D rendering scene and adds a camera to it. Provides
+  /// mouse orbit controls and emits events so that plugins can react to
+  /// events like render (on the rendering thread) and various mouse events.
   ///
-  /// ## Configuration
+  /// The interface is not meant to be standalone, so it doesn't provide any
+  /// methods of updating the scene, such as adding, removing or updating
+  /// visuals. Instead, plugins should instantiate this interface and add
+  /// update mechanisms on top of it.
   ///
-  /// * \<engine\> : Optional render engine name, defaults to 'ogre'.
-  /// * \<scene\> : Optional scene name, defaults to 'scene'. The plugin will
-  ///               create a scene with this name if there isn't one yet. If
-  ///               there is already one, a new camera is added to it.
-  /// * \<ambient_light\> : Optional color for ambient light, defaults to
-  ///                       (0.3, 0.3, 0.3, 1.0)
-  /// * \<background_color\> : Optional background color, defaults to
-  ///                          (0.3, 0.3, 0.3, 1.0)
-  /// * \<camera_pose\> : Optional starting pose for the camera, defaults to
-  ///                     (0, 0, 5, 0, 0, 0)
+  /// For example, the `TransportScene3D` plugin provides an Ignition Transport
+  /// interface to updating the scene.
   class IGNITION_GUI_VISIBLE Scene3DInterface
   {
     /// \brief Constructor
@@ -67,59 +52,16 @@ namespace gui
     /// \brief Destructor
     public: ~Scene3DInterface();
 
-    void Update();
-
-    public: void SetPluginItem(QQuickItem * pluginItem);
+    public: void SetPluginItem(QQuickItem *_pluginItem);
     public: void SetFullScreen(bool _fullscreen);
-    public: void SetEngineName(const std::string _name);
-    public: void SetSceneName(const std::string _name);
-    public: void SetAmbientLight(const math::Color ambient);
-    public: void SetBackgroundColor(const math::Color bgColor);
-    public: void SetCameraPose(const math::Pose3d pose);
-    public: void SetSceneService(const std::string service);
-    public: void SetPoseTopic(const std::string topic);
-    public: void SetDeletionTopic(const std::string topic);
-    public: void SetSceneTopic(const std::string topic);
-    public: void SetSkyEnabled(const bool sky);
-    public: void SetShowGrid(const bool grid);
-    public: void SetFollowPGain(const double gain);
-    public: void SetFollowTarget(const std::string &_target,
-        bool _waitForTarget = false);
-
-    public: void UpdatePoses(std::unordered_map<long unsigned int, math::Pose3d> &_poses);
+    public: void SetEngineName(const std::string &_name);
+    public: void SetSceneName(const std::string &_name);
 
     public: bool IsSceneAvailable();
-
-    public: void SetScene(const msgs::Scene &_scene);
-
-    public: void SetModel(const msgs::Model &_model);
-
-    /// \brief True to set the camera to follow the target in world frame,
-    /// false to follow in target's local frame
-    /// \param[in] _gain Camera follow p gain.
-    public: void SetFollowWorldFrame(bool _worldFrame);
-
-    /// \brief Set the camera follow offset position
-    /// \param[in] _offset Camera follow offset position.
-    public: void SetFollowOffset(const math::Vector3d &_offset);
 
     /// \brief Set the user camera visibility mask
     /// \param[in] _mask Visibility mask to set to
     public: void SetVisibilityMask(uint32_t _mask);
-
-    /// \brief Callback for a move to request
-    /// \param[in] _msg Request message to set the target to move to.
-    /// \param[in] _res Response data
-    /// \return True if the request is received
-    private: bool OnMoveTo(const msgs::StringMsg &_msg,
-        msgs::Boolean &_res);
-
-    /// \brief Callback for a follow request
-    /// \param[in] _msg Request message to set the target to follow.
-    /// \param[in] _res Response data
-    /// \return True if the request is received
-    private: bool OnFollow(const msgs::StringMsg &_msg,
-        msgs::Boolean &_res);
 
     /// \internal
     /// \brief Pointer to private data.

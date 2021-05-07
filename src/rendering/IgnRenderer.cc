@@ -1,14 +1,24 @@
-#include "IgnRenderer.hh"
-#include "SceneManager.hh"
+/*
+ * Copyright (C) 2021 Open Source Robotics Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
 
-#include <ignition/gui/MainWindow.hh>
-#include "ignition/gui/GuiEvents.hh"
 
 #include <mutex>
 
 #include <ignition/common/MouseEvent.hh>
-#include <ignition/rendering/MoveToHelper.hh>
-
 #include <ignition/math/Vector2.hh>
 
 // TODO(louise) Remove these pragmas once ign-rendering and ign-msgs
@@ -16,9 +26,9 @@
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #endif
-#include <ignition/msgs.hh>
 
 #include <ignition/rendering/Camera.hh>
+#include <ignition/rendering/MoveToHelper.hh>
 #include <ignition/rendering/OrbitViewController.hh>
 #include <ignition/rendering/RayQuery.hh>
 #include <ignition/rendering/RenderEngine.hh>
@@ -28,6 +38,12 @@
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+#include <ignition/gui/GuiEvents.hh>
+#include <ignition/gui/MainWindow.hh>
+
+#include "IgnRenderer.hh"
+#include "SceneManager.hh"
 
 using namespace ignition;
 using namespace gui;
@@ -48,13 +64,6 @@ namespace gui
     /// \brief The currently hovered mouse position in screen coordinates
     public: math::Vector2i mouseHoverPos = math::Vector2i::Zero;
 
-    /// \brief Flag for indicating whether we are spawning or not.
-    public: bool isSpawning = false;
-
-    /// \brief Flag for indicating whether the user is currently placing a
-    /// resource with the shapes plugin or not
-    public: bool isPlacing = false;
-
     /// \brief Mouse event
     public: common::MouseEvent mouseEvent;
 
@@ -63,34 +72,6 @@ namespace gui
 
     /// \brief Mutex to protect mouse events
     public: std::mutex mutex;
-
-    /// \brief Target to follow
-    public: std::string followTarget;
-
-    /// \brief Wait for follow target
-    public: bool followTargetWait = false;
-
-    /// \brief Offset of camera from taget being followed
-    public: math::Vector3d followOffset = math::Vector3d(-5, 0, 3);
-
-    /// \brief Flag to indicate the follow offset needs to be updated
-    public: bool followOffsetDirty = false;
-
-    /// \brief Follow P gain
-    public: double followPGain = 0.01;
-
-    /// \brief True follow the target at an offset that is in world frame,
-    /// false to follow in target's local frame
-    public: bool followWorldFrame = false;
-
-    /// \brief Target to move the user camera to
-    public: std::string moveToTarget;
-
-    /// \brief Helper object to move user camera
-    public: ignition::rendering::MoveToHelper moveToHelper;
-
-    /// \brief Last move to animation time
-    public: std::chrono::time_point<std::chrono::system_clock> prevMoveToTime;
 
     /// \brief User camera
     public: rendering::CameraPtr camera;
@@ -106,8 +87,6 @@ namespace gui
 
     /// \brief View control focus target
     public: math::Vector3d target;
-
-    public: bool showGrid = false;
   };
 }
 }
@@ -148,98 +127,8 @@ void IgnRenderer::Render()
   // view control
   this->HandleMouseEvent();
 
-  // reset follow mode if target node got removed
-  if (!this->dataPtr->followTarget.empty())
-  {
-    rendering::NodePtr target =
-      this->dataPtr->sceneManager.GetScene()->NodeByName(
-        this->dataPtr->followTarget);
-    if (!target && !this->dataPtr->followTargetWait)
-    {
-      this->dataPtr->camera->SetFollowTarget(nullptr);
-      this->dataPtr->camera->SetTrackTarget(nullptr);
-      this->dataPtr->followTarget.clear();
-      emit FollowTargetChanged(std::string(), false);
-    }
-  }
-
   // update and render to texture
   this->dataPtr->camera->Update();
-
-  // move to
-  if (!this->dataPtr->moveToTarget.empty())
-  {
-    if (this->dataPtr->moveToHelper.Idle())
-    {
-      rendering::NodePtr target = this->dataPtr->sceneManager.GetScene()->NodeByName(
-          this->dataPtr->moveToTarget);
-
-      if (target)
-      {
-        this->dataPtr->moveToHelper.MoveTo(this->dataPtr->camera, target, 0.5,
-            std::bind(&IgnRenderer::OnMoveToComplete, this));
-        this->dataPtr->prevMoveToTime = std::chrono::system_clock::now();
-      }
-      else
-      {
-        ignerr << "Unable to move to target. Target: '"
-               << this->dataPtr->moveToTarget << "' not found" << std::endl;
-        this->dataPtr->moveToTarget.clear();
-      }
-    }
-    else
-    {
-      auto now = std::chrono::system_clock::now();
-      std::chrono::duration<double> dt = now - this->dataPtr->prevMoveToTime;
-      this->dataPtr->moveToHelper.AddTime(dt.count());
-      this->dataPtr->prevMoveToTime = now;
-    }
-  }
-
-  // Follow
-  rendering::NodePtr followTarget = this->dataPtr->camera->FollowTarget();
-  if (!this->dataPtr->followTarget.empty())
-  {
-    rendering::NodePtr target = this->dataPtr->sceneManager.GetScene()->NodeByName(
-        this->dataPtr->followTarget);
-
-    if (target != nullptr)
-    {
-      if (!followTarget || target != followTarget)
-      {
-        this->dataPtr->camera->SetFollowTarget(target,
-            this->dataPtr->followOffset,
-            this->dataPtr->followWorldFrame);
-        this->dataPtr->camera->SetFollowPGain(this->dataPtr->followPGain);
-
-        this->dataPtr->camera->SetTrackTarget(target);
-        // found target, no need to wait anymore
-        this->dataPtr->followTargetWait = false;
-      }
-      else if (this->dataPtr->followOffsetDirty)
-      {
-        math::Vector3d offset =
-            this->dataPtr->camera->WorldPosition() - target->WorldPosition();
-        if (!this->dataPtr->followWorldFrame)
-        {
-          offset = target->WorldRotation().RotateVectorReverse(offset);
-        }
-        this->dataPtr->camera->SetFollowOffset(offset);
-        this->dataPtr->followOffsetDirty = false;
-      }
-    }
-    else if (!this->dataPtr->followTargetWait)
-    {
-      ignerr << "Unable to follow target. Target: '"
-             << this->dataPtr->followTarget << "' not found" << std::endl;
-      this->dataPtr->followTarget.clear();
-    }
-  }
-  else if (followTarget)
-  {
-    this->dataPtr->camera->SetFollowTarget(nullptr);
-    this->dataPtr->camera->SetTrackTarget(nullptr);
-  }
 
   if (ignition::gui::App())
   {
@@ -250,24 +139,11 @@ void IgnRenderer::Render()
 }
 
 /////////////////////////////////////////////////
-void IgnRenderer::OnMoveToComplete()
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->moveToTarget.clear();
-}
-
-/////////////////////////////////////////////////
 void IgnRenderer::HandleMouseEvent()
 {
   std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
   this->BroadcastHoverPos();
-  this->HandleModelPlacement();
   this->HandleMouseViewControl();
-}
-
-/////////////////////////////////////////////////
-void IgnRenderer::HandleModelPlacement()
-{
 }
 
 /////////////////////////////////////////////////
@@ -289,10 +165,6 @@ void IgnRenderer::HandleMouseViewControl()
 {
   if (!this->dataPtr->mouseDirty)
     return;
-
-  math::Vector3d camWorldPos;
-  if (!this->dataPtr->followTarget.empty())
-    this->dataPtr->camera->WorldPosition();
 
   this->dataPtr->viewControl.SetCamera(this->dataPtr->camera);
 
@@ -342,15 +214,6 @@ void IgnRenderer::HandleMouseViewControl()
   }
   this->dataPtr->drag = 0;
   this->dataPtr->mouseDirty = false;
-
-  if (!this->dataPtr->followTarget.empty())
-  {
-    math::Vector3d dPos = this->dataPtr->camera->WorldPosition() - camWorldPos;
-    if (dPos != math::Vector3d::Zero)
-    {
-      this->dataPtr->followOffsetDirty = true;
-    }
-  }
 }
 
 /////////////////////////////////////////////////
@@ -375,9 +238,6 @@ void IgnRenderer::Initialize()
   {
     igndbg << "Create scene! [" << this->sceneName << "]" << std::endl;
     scene = engine->CreateScene(this->sceneName);
-    scene->SetAmbientLight(this->ambientLight);
-    scene->SetBackgroundColor(this->backgroundColor);
-    scene->SetSkyEnabled(this->sky);
   }
 
   auto root = scene->RootVisual();
@@ -385,7 +245,6 @@ void IgnRenderer::Initialize()
   // Camera
   this->dataPtr->camera = scene->CreateCamera();
   root->AddChild(this->dataPtr->camera);
-  this->dataPtr->camera->SetLocalPose(this->cameraPose);
   this->dataPtr->camera->SetImageWidth(this->textureSize.width());
   this->dataPtr->camera->SetImageHeight(this->textureSize.height());
   this->dataPtr->camera->SetAntiAliasing(8);
@@ -423,68 +282,6 @@ void IgnRenderer::Destroy()
 
     // TODO(anyone) If that was the last scene, terminate engine?
   }
-}
-
-/////////////////////////////////////////////////
-void IgnRenderer::SetMoveTo(const std::string &_target)
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->moveToTarget = _target;
-}
-
-void IgnRenderer::SetFollowWorldFrame(bool _worldFrame)
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->followWorldFrame = _worldFrame;
-}
-
-/////////////////////////////////////////////////
-void IgnRenderer::SetFollowOffset(const math::Vector3d &_offset)
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->followOffset = _offset;
-}
-
-/////////////////////////////////////////////////
-void IgnRenderer::SetFollowTarget(const std::string &_target,
-    bool _waitForTarget)
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->followTarget = _target;
-  this->dataPtr->followTargetWait = _waitForTarget;
-}
-
-std::string IgnRenderer::FollowTarget() const
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  return this->dataPtr->followTarget;
-}
-/////////////////////////////////////////////////
-void IgnRenderer::SetFollowPGain(double _gain)
-{
-  std::lock_guard<std::mutex> lock(this->dataPtr->mutex);
-  this->dataPtr->followPGain = _gain;
-}
-
-void IgnRenderer::UpdatePoses(std::unordered_map<long unsigned int, math::Pose3d> &_poses)
-{
-  this->dataPtr->sceneManager.UpdatePoses(_poses);
-}
-
-/////////////////////////////////////////////////
-void IgnRenderer::SetShowGrid(bool _grid)
-{
-  this->dataPtr->sceneManager.SetActiveGrid(_grid);
-}
-
-void IgnRenderer::SetModel(const msgs::Model &_model)
-{
-  this->dataPtr->sceneManager.LoadModel(_model);
-}
-
-void IgnRenderer::SetScene(const msgs::Scene &_scene)
-{
-  this->dataPtr->sceneManager.SetScene(_scene);
 }
 
 /////////////////////////////////////////////////

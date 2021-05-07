@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  *
 */
-#ifndef IGNITION_GUI_PLUGINS_SCENE3DNEW_HH_
-#define IGNITION_GUI_PLUGINS_SCENE3DNEW_HH_
-
-#include <ignition/gui/Plugin.hh>
-#include <ignition/gui/Scene3DInterface.hh>
-#include <ignition/utilities/SuppressWarning.hh>
+#ifndef IGNITION_GUI_PLUGINS_TRANSPORTSCENE3D_HH_
+#define IGNITION_GUI_PLUGINS_TRANSPORTSCENE3D_HH_
 
 #include <memory>
+
+#include <ignition/gui/Plugin.hh>
+#include <ignition/utilities/SuppressWarning.hh>
 
 namespace ignition
 {
@@ -29,24 +28,24 @@ namespace gui
 {
 namespace plugins
 {
+class TransportScene3DPrivate;
 
-/// \brief Plots fields from Ignition Transport topics.
-/// Fields can be dragged from the Topic Viewer or the Component Inspector.
-class Scene3DNew : public ignition::gui::Plugin
+/// \brief 3D scene that can be updated through a transport interface.
+class TransportScene3D : public ignition::gui::Plugin
 {
   Q_OBJECT
 
   /// \brief Constructor
-  public: Scene3DNew();
+  public: TransportScene3D();
 
   /// \brief Destructor
-  public: ~Scene3DNew();
+  public: ~TransportScene3D();
 
   // Documentation inherited
   public: void LoadConfig(const tinyxml2::XMLElement *) override;
 
   IGN_UTILS_WARN_IGNORE__DLL_INTERFACE_MISSING
-  private: std::unique_ptr<Scene3DInterface> dataPtr;
+  private: std::unique_ptr<TransportScene3DPrivate> dataPtr;
   IGN_UTILS_WARN_RESUME__DLL_INTERFACE_MISSING
 };
 
