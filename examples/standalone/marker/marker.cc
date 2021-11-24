@@ -305,6 +305,22 @@ int main(int _argc, char **_argv)
   ignition::msgs::Set(markerMsg3->mutable_pose(),
                       ignition::math::Pose3d(3, 3, 4, 0, 0, 0));
 
+  // Create yellow arrow marker
+  auto markerMsg4 = markerMsgs.add_marker();
+  markerMsg4->set_ns("default");
+  markerMsg4->set_id(0);
+  markerMsg4->set_action(ignition::msgs::Marker::ADD_MODIFY);
+  markerMsg4->set_type(ignition::msgs::Marker::ARROW);
+  markerMsg4->set_visibility(ignition::msgs::Marker::GUI);
+
+  // Set color to Green
+  ignition::msgs::Set(markerMsg4->mutable_material()->mutable_ambient(), ignition::math::Color::Yellow);
+  ignition::msgs::Set(markerMsg4->mutable_material()->mutable_diffuse(), ignition::math::Color::Yellow);
+  ignition::msgs::Set(markerMsg4->mutable_scale(),
+                    ignition::math::Vector3d(1.0, 1.0, 1.0));
+  ignition::msgs::Set(markerMsg4->mutable_pose(),
+                      ignition::math::Pose3d(2, 2, 3, 0, 0, 0));
+
   // Publish the three created markers above simultaneously
   node.Request("/marker_array", markerMsgs, timeout, res, result);
 

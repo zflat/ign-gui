@@ -597,6 +597,10 @@ ignition::rendering::MarkerType MarkerManagerPrivate::MsgToType(
   }
   switch (marker)
   {
+    case ignition::msgs::Marker::ARROW:
+      return ignition::rendering::MarkerType::MT_ARROW;
+    case ignition::msgs::Marker::AXIS:
+      return ignition::rendering::MarkerType::MT_AXIS;
     case ignition::msgs::Marker::BOX:
       return ignition::rendering::MarkerType::MT_BOX;
     case ignition::msgs::Marker::CAPSULE:

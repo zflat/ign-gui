@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+project(ign-gui-marker-example)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   find_package(ignition-transport11 QUIET REQUIRED OPTIONAL_COMPONENTS log)

@@ -14,7 +14,11 @@ From this directory:
 
 ## Execute Instructions
 
-Launch ign gazebo unpaused then from the build directory above:
+Launch the `markers` example config:
+
+    ign gui -c examples/config/markers.config
+
+Then from the build directory above:
 
     ./marker
 
