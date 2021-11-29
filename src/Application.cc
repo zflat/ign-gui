@@ -83,7 +83,7 @@ using namespace gui;
 
 /////////////////////////////////////////////////
 Application::Application(int &_argc, char **_argv, const WindowType _type)
-  : QApplication(_argc, _argv), dataPtr(new ApplicationPrivate)
+  : ApplicationBase(_argc, _argv, _type), dataPtr(new ApplicationPrivate)
 {
   igndbg << "Initializing application." << std::endl;
 
@@ -173,9 +173,9 @@ QQmlApplicationEngine *Application::Engine() const
 }
 
 /////////////////////////////////////////////////
-Application *ignition::gui::App()
+ApplicationBase *ignition::gui::App()
 {
-  return qobject_cast<Application *>(qGuiApp);
+  return qobject_cast<ApplicationBase *>(qGuiApp);
 }
 
 /////////////////////////////////////////////////

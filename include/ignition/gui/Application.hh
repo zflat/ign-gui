@@ -61,7 +61,120 @@ namespace ignition
     /// provides an API to load plugins and configuration files. The application
     /// supports either running a single main window or several plugins as
     /// standalone dialogs.
-    class IGNITION_GUI_VISIBLE Application : public QApplication
+    class IGNITION_GUI_VISIBLE ApplicationBase : public QApplication
+    {
+      Q_OBJECT
+
+      /// \brief Constructor.
+      /// \param[in] _argc Argument count.
+      /// \param[in] _argv Argument values.
+      /// \param[in] _type Window type, by default it's a main window.
+      public: ApplicationBase(int &_argc, char **_argv,
+                           const WindowType /*_type*/) : QApplication(_argc, _argv) {} ;
+
+      /// \brief Get the QML engine
+      /// \return Pointer to QML engine
+      public: virtual QQmlApplicationEngine *Engine() const = 0;
+
+      /// \brief Load a plugin from a file name. The plugin file must be in the
+      /// path.
+      /// If a window has been initialized, the plugin is added to the window.
+      /// Otherwise, the plugin is stored and can be later added to a window or
+      /// dialog.
+      /// \param[in] _filename Plugin filename.
+      /// \param[in] _pluginElem Element containing plugin configuration
+      /// \return True if successful
+      /// \sa LoadConfig
+      /// \sa AddPluginsToWindow
+      public: virtual bool LoadPlugin(const std::string &_filename,
+          const tinyxml2::XMLElement *_pluginElem = nullptr) = 0;
+
+      /// \brief Load a configuration file, which includes window configurations
+      /// and plugins. This function doesn't instantiate the plugins, it just
+      /// keeps them in memory and they can be applied later by either
+      /// instantiating a window or several dialogs.
+      /// \param[in] _path Full path to configuration file.
+      /// \return True if successful
+      /// \sa InitializeMainWindow
+      /// \sa InitializeDialogs
+      public: virtual bool LoadConfig(const std::string &_path) = 0;
+
+      /// \brief Load the configuration from the default config file.
+      /// \return True if successful
+      /// \sa SetDefaultConfigPath
+      /// \sa DefaultConfigPath
+      /// \sa LoadConfig
+      public: virtual bool LoadDefaultConfig() = 0;
+
+      /// \brief Specifies the location of the default configuration file.
+      /// This is the file that stores the user settings when pressing
+      /// "Save configuration".
+      /// \param[in] _path The default configuration full path including
+      /// filename.
+      /// \sa LoadDefaultConfig
+      /// \sa defaultConfigPath
+      public: virtual void SetDefaultConfigPath(const std::string &_path) = 0;
+
+      /// \brief Get the location of the default configuration file.
+      /// \return The default configuration path.
+      /// \sa LoadDefaultConfig
+      /// \sa SetDefaultConfigPath
+      public: virtual std::string DefaultConfigPath() = 0;
+
+      /// \brief Set the environment variable which defines the paths to
+      /// look for plugins.
+      /// \param[in] _env Name of environment variable.
+      public: virtual void SetPluginPathEnv(const std::string &_env) = 0;
+
+      /// \brief Add an path to look for plugins.
+      /// \param[in] _path Full path.
+      public: virtual void AddPluginPath(const std::string &_path) = 0;
+
+      /// \brief Get the list of available plugins, organized by path. The
+      /// paths are given in the following order:
+      ///
+      /// 1. Paths given by the environment variable
+      /// 2. Paths added by calling addPluginPath
+      /// 3. Path ~/.ignition/gui/plugins
+      /// 4. The path where Ignition GUI plugins are installed
+      ///
+      /// \return A vector of pairs, where each pair contains:
+      /// * A path
+      /// * A vector of plugins in that path
+      public: virtual std::vector<std::pair<std::string, std::vector<std::string>>>
+          PluginList() = 0;
+
+      /// \brief Remove plugin by name. The plugin is removed from the
+      /// application and its shared library unloaded if this was its last
+      /// instance.
+      /// \param[in] _pluginName Plugn instance's unique name. This is the
+      /// plugin card's object name.
+      /// \return True if successful
+      public: virtual bool RemovePlugin(const std::string &_pluginName) = 0;
+
+      /// \brief Get a plugin by its unique name.
+      /// \param[in] _pluginName Plugn instance's unique name. This is the
+      /// plugin card's object name.
+      /// \return Pointer to plugin object, null if not found.
+      public: virtual std::shared_ptr<Plugin> PluginByName(
+          const std::string &_pluginName) const = 0;
+
+      // /// \brief Notify that a plugin has been added.
+      // /// \param[in] _objectName Plugin's object name.
+      signals: virtual void PluginAdded(const QString &_objectName) = 0;
+
+      // /// \brief Callback when user requests to close a plugin
+      public slots: virtual void OnPluginClose() = 0;
+
+
+    };
+
+
+    /// \brief An Ignition GUI application loads a QML engine and
+    /// provides an API to load plugins and configuration files. The application
+    /// supports either running a single main window or several plugins as
+    /// standalone dialogs.
+    class IGNITION_GUI_VISIBLE Application : public ApplicationBase
     {
       Q_OBJECT
 
@@ -207,7 +320,7 @@ namespace ignition
     /// \brief Get current running application, this is a cast of qGuiApp.
     /// \return Pointer to running application, or nullptr if none is running.
     IGNITION_GUI_VISIBLE
-    Application *App();
+    ApplicationBase *App();
   }
 }
 
