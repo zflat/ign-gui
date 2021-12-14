@@ -51,21 +51,6 @@ SplitView {
     background.recalculateMinimumSizes();
   }
 
-  Rectangle {
-    id: startLabel;
-    visible: MainWindow.pluginCount === 0
-    anchors.fill: parent
-    color: Material.background
-    Label {
-      text: "Insert plugins to start!"
-      anchors.fill: parent
-      font.pointSize: 24
-      horizontalAlignment: Label.AlignHCenter
-      verticalAlignment: Label.AlignVCenter
-      wrapMode: Label.Wrap
-    }
-  }
-
   /**
    * Recalculate minimum size for all splits
    */

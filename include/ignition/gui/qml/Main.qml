@@ -215,7 +215,22 @@ ApplicationWindow
    */
   IgnSplit {
     anchors.fill: parent
+    Rectangle {
+      id: startLabel;
+      visible: MainWindow.pluginCount === 0
+      anchors.fill: parent
+      color: Material.background
+      Label {
+        text: "Insert plugins to start!"
+        anchors.fill: parent
+        font.pointSize: 24
+        horizontalAlignment: Label.AlignHCenter
+        verticalAlignment: Label.AlignVCenter
+        wrapMode: Label.Wrap
+      }
+    }
   }
+
 
   /**
    * Left menu
