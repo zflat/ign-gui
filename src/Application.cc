@@ -179,6 +179,11 @@ ApplicationBase *ignition::gui::App()
 }
 
 /////////////////////////////////////////////////
+QObject* Application::MainEventReceiver() const
+{
+  return this->findChild<MainWindow *>();
+}
+
 bool Application::RemovePlugin(const std::string &_pluginName)
 {
   auto plugin = this->PluginByName(_pluginName);

@@ -905,9 +905,7 @@ void IgnRenderer::Render()
 
   if (ignition::gui::App())
   {
-    ignition::gui::App()->sendEvent(
-        ignition::gui::App()->findChild<ignition::gui::MainWindow *>(),
-        new gui::events::Render());
+    ignition::gui::App()->sendEvent(ignition::gui::App()->MainEventReceiver(), new gui::events::Render());
   }
 }
 
@@ -1056,7 +1054,7 @@ void IgnRenderer::BroadcastLeftClick()
   auto pos = this->ScreenToScene(this->dataPtr->mouseEvent.Pos());
 
   events::LeftClickToScene leftClickToSceneEvent(pos);
-  App()->sendEvent(App()->findChild<MainWindow *>(), &leftClickToSceneEvent);
+  App()->sendEvent(App()->MainEventReceiver(), &leftClickToSceneEvent);
 }
 
 /////////////////////////////////////////////////

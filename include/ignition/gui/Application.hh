@@ -76,6 +76,8 @@ namespace ignition
       /// \return Pointer to QML engine
       public: virtual QQmlApplicationEngine *Engine() const = 0;
 
+      public: virtual QObject* MainEventReceiver() const = 0;
+
       /// \brief Load a plugin from a file name. The plugin file must be in the
       /// path.
       /// If a window has been initialized, the plugin is added to the window.
@@ -191,6 +193,8 @@ namespace ignition
       /// \brief Get the QML engine
       /// \return Pointer to QML engine
       public: QQmlApplicationEngine *Engine() const;
+
+      public: QObject* MainEventReceiver() const;
 
       /// \brief Load a plugin from a file name. The plugin file must be in the
       /// path.
