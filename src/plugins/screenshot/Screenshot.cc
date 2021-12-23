@@ -118,7 +118,7 @@ void Screenshot::LoadConfig(const tinyxml2::XMLElement *)
   ignmsg << "Screenshot service on ["
          << this->dataPtr->screenshotService << "]" << std::endl;
 
-  App()->findChild<MainWindow *>()->installEventFilter(this);
+  ignition::gui::App()->MainEventReceiver()->installEventFilter(this);
 }
 
 /////////////////////////////////////////////////

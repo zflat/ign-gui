@@ -1035,7 +1035,7 @@ void IgnRenderer::BroadcastHoverPos()
   auto pos = this->ScreenToScene(this->dataPtr->mouseHoverPos);
 
   events::HoverToScene hoverToSceneEvent(pos);
-  App()->sendEvent(App()->findChild<MainWindow *>(), &hoverToSceneEvent);
+  App()->sendEvent(ignition::gui::App()->MainEventReceiver(), &hoverToSceneEvent);
 }
 
 /////////////////////////////////////////////////
@@ -1073,7 +1073,7 @@ void IgnRenderer::BroadcastRightClick()
   auto pos = this->ScreenToScene(this->dataPtr->mouseEvent.Pos());
 
   events::RightClickToScene rightClickToSceneEvent(pos);
-  App()->sendEvent(App()->findChild<MainWindow *>(), &rightClickToSceneEvent);
+  App()->sendEvent(ignition::gui::App()->MainEventReceiver(), &rightClickToSceneEvent);
 }
 
 /////////////////////////////////////////////////

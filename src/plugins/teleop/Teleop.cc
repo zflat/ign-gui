@@ -108,8 +108,7 @@ void Teleop::LoadConfig(const tinyxml2::XMLElement *)
   if (this->title.empty())
     this->title = "Teleop";
 
-  ignition::gui::App()->findChild
-    <ignition::gui::MainWindow *>()->QuickWindow()->installEventFilter(this);
+  ignition::gui::App()->MainEventReceiver()->installEventFilter(this);
 }
 
 /////////////////////////////////////////////////
