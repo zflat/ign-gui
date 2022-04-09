@@ -163,7 +163,7 @@ namespace ignition
 
       // /// \brief Notify that a plugin has been added.
       // /// \param[in] _objectName Plugin's object name.
-      signals: virtual void PluginAdded(const QString &_objectName) = 0;
+      signals: void PluginAdded(const QString &_objectName);
 
       // /// \brief Callback when user requests to close a plugin
       public slots: virtual void OnPluginClose() = 0;
